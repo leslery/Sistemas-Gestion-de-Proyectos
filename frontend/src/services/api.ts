@@ -138,6 +138,10 @@ export const iniciativasService = {
     });
     return response.data;
   },
+  delete: async (id: number) => {
+    const response = await api.delete(`/iniciativas/${id}`);
+    return response.data;
+  },
 };
 
 // Evaluaciones
@@ -152,6 +156,10 @@ export const evaluacionesService = {
   },
   create: async (data: any) => {
     const response = await api.post('/evaluaciones/', data);
+    return response.data;
+  },
+  update: async (evaluacionId: number, data: any) => {
+    const response = await api.put(`/evaluaciones/${evaluacionId}`, data);
     return response.data;
   },
   cerrar: async (iniciativaId: number) => {
@@ -194,6 +202,18 @@ export const proyectosService = {
     const response = await api.post(`/proyectos/${proyectoId}/fases`, data);
     return response.data;
   },
+  actualizarFase: async (faseId: number, data: any) => {
+    const response = await api.put(`/proyectos/fases/${faseId}`, data);
+    return response.data;
+  },
+  completarHito: async (hitoId: number) => {
+    const response = await api.put(`/proyectos/hitos/${hitoId}/completar`);
+    return response.data;
+  },
+  crearHito: async (proyectoId: number, data: any) => {
+    const response = await api.post(`/proyectos/${proyectoId}/hitos`, data);
+    return response.data;
+  },
   getRiesgos: async (id: number) => {
     const response = await api.get(`/proyectos/${id}/riesgos`);
     return response.data;
@@ -232,6 +252,10 @@ export const planificacionService = {
   },
   crearPlan: async (data: any) => {
     const response = await api.post('/planificacion/planes', null, { params: data });
+    return response.data;
+  },
+  actualizarPlan: async (año: number, data: any) => {
+    const response = await api.put(`/planificacion/planes/${año}`, data);
     return response.data;
   },
   agregarProyecto: async (año: number, proyectoId: number, monto: number) => {
@@ -278,6 +302,24 @@ export const presupuestoService = {
     });
     return response.data;
   },
+  rechazarCambio: async (cambioId: number, observaciones?: string) => {
+    const response = await api.post(`/presupuesto/cambios/${cambioId}/rechazar`, null, {
+      params: { observaciones },
+    });
+    return response.data;
+  },
+  getClasificacion: async (proyectoId: number) => {
+    const response = await api.get(`/presupuesto/clasificacion/proyecto/${proyectoId}`);
+    return response.data;
+  },
+  clasificarGasto: async (proyectoId: number, data: any) => {
+    const response = await api.post(`/presupuesto/clasificacion/proyecto/${proyectoId}`, data);
+    return response.data;
+  },
+  getCambiosProyecto: async (proyectoId: number) => {
+    const response = await api.get(`/presupuesto/cambios/proyecto/${proyectoId}`);
+    return response.data;
+  },
   getCurvaS: async (proyectoId: number) => {
     const response = await api.get(`/presupuesto/curva-s/proyecto/${proyectoId}`);
     return response.data;
@@ -314,6 +356,14 @@ export const dashboardService = {
     const response = await api.get('/dashboard/por-rol');
     return response.data;
   },
+  getBancoReserva: async () => {
+    const response = await api.get('/dashboard/banco-reserva');
+    return response.data;
+  },
+  getClasificacion: async () => {
+    const response = await api.get('/dashboard/clasificacion');
+    return response.data;
+  },
 };
 
 // Seguimiento
@@ -336,6 +386,12 @@ export const seguimientoService = {
   },
   getResumenPortfolio: async (año?: number) => {
     const response = await api.get('/seguimiento/resumen-portfolio', { params: { año } });
+    return response.data;
+  },
+  actualizarSemaforo: async (proyectoId: number, semaforo: string, comentario?: string) => {
+    const response = await api.put(`/seguimiento/proyecto/${proyectoId}/semaforo`, null, {
+      params: { semaforo_salud: semaforo, comentario },
+    });
     return response.data;
   },
 };
