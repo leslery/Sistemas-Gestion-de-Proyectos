@@ -61,6 +61,8 @@ import Contratos from './pages/compras/Contratos';
 import Ordenes from './pages/compras/Ordenes';
 
 // Configuración Module
+import CatalogosMaestros from './pages/configuracion/CatalogosMaestros';
+import UsuariosPermisos from './pages/configuracion/UsuariosPermisos';
 import FlujosTrabajo from './pages/configuracion/FlujosTrabajo';
 import Plantillas from './pages/configuracion/Plantillas';
 import Integraciones from './pages/configuracion/Integraciones';
@@ -161,6 +163,8 @@ function App() {
 
         {/* Configuración Routes */}
         <Route path="configuracion" element={<Configuracion />} />
+        <Route path="configuracion/catalogos" element={<CatalogosMaestros />} />
+        <Route path="configuracion/usuarios" element={<UsuariosPermisos />} />
         <Route path="configuracion/flujos" element={<FlujosTrabajo />} />
         <Route path="configuracion/plantillas" element={<Plantillas />} />
         <Route path="configuracion/integraciones" element={<Integraciones />} />
