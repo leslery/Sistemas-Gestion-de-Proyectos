@@ -1,160 +1,133 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuthStore, isJefeTD, isComite, isCGEDx, isAdmin } from '../../store/authStore';
-import {
-  LayoutDashboard,
-  BarChart3,
-  PieChart,
-  DollarSign,
-  Users,
-  FileBarChart,
-  GitBranch,
-  Lightbulb,
-  ClipboardCheck,
-  Target,
-  FileText,
-  UserCheck,
-  Zap,
-  AlertCircle,
-  FolderKanban,
-  Rocket,
-  Compass,
-  Hammer,
-  TestTube,
-  ArrowRightLeft,
-  PlayCircle,
-  Activity,
-  Calculator,
-  CalendarClock,
-  AlertTriangle,
-  Shield,
-  FileArchive,
-  LineChart,
-  Archive,
-  CheckCircle2,
-  XCircle,
-  Calendar,
-  ShoppingCart,
-  FileQuestion,
-  Star,
-  FileSignature,
-  ClipboardList,
-  Settings,
-  Workflow,
-  LayoutTemplate,
-  Plug,
-  ChevronRight,
-  ChevronDown,
-  Search,
-  type LucideIcon
-} from 'lucide-react';
+import { sidebarBadgeCounts } from '../../data/mockData';
 import clsx from 'clsx';
 
-interface NavItem {
+interface SubMenuItem {
+  id: string;
   name: string;
   href: string;
-  icon: LucideIcon;
-  badge?: number;
+  icon: string;
+  badge?: number | 'new';
 }
 
 interface NavSection {
+  id: string;
   name: string;
-  icon: LucideIcon;
-  roles: ('all' | 'admin' | 'td' | 'comite' | 'executive' | 'demandante')[];
-  items: NavItem[];
+  icon: string;
+  colorClass: string;
+  items: SubMenuItem[];
 }
 
 const navigation: NavSection[] = [
   {
+    id: 'dashboard',
     name: 'Dashboard',
-    icon: LayoutDashboard,
-    roles: ['all'],
+    icon: 'fa-th-large',
+    colorClass: 'nav-icon-dashboard',
     items: [
-      { name: 'Dashboard Principal', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Dashboard Ejecutivo', href: '/dashboard-ejecutivo', icon: BarChart3 },
-      { name: 'Portafolio', href: '/dashboards/portafolio', icon: PieChart },
-      { name: 'Financiero', href: '/dashboards/financiero', icon: DollarSign },
-      { name: 'Gobernanza', href: '/dashboards/gobernanza', icon: Users },
-      { name: 'Centro de Reportes', href: '/dashboards/reportes', icon: FileBarChart },
+      { id: 'vista-ejecutiva', name: 'Vista Ejecutiva', href: '/dashboard', icon: 'fa-chart-pie' },
+      { id: 'portafolio', name: 'Portafolio de Proyectos', href: '/dashboards/portafolio', icon: 'fa-briefcase' },
+      { id: 'planificacion-anual', name: 'Planificación Anual', href: '/plan-anual', icon: 'fa-calendar-alt' },
+      { id: 'vista-financiera', name: 'Vista Financiera', href: '/dashboards/financiero', icon: 'fa-dollar-sign' },
+      { id: 'gobernanza', name: 'Gobernanza', href: '/dashboards/gobernanza', icon: 'fa-sitemap' },
+      { id: 'reportes', name: 'Reportes y Exportación', href: '/dashboards/reportes', icon: 'fa-file-alt' },
     ],
   },
   {
+    id: 'activacion',
     name: 'Activación y Aprobación',
-    icon: Lightbulb,
-    roles: ['all'],
+    icon: 'fa-rocket',
+    colorClass: 'nav-icon-activacion',
     items: [
-      { name: 'Pipeline', href: '/pipeline', icon: GitBranch },
-      { name: 'Iniciativas', href: '/iniciativas', icon: Lightbulb },
-      { name: 'Evaluaciones', href: '/evaluaciones', icon: ClipboardCheck },
-      { name: 'Planificación Estratégica', href: '/activacion/planificacion', icon: Target },
-      { name: 'Informe Factibilidad', href: '/activacion/factibilidad', icon: FileText },
-      { name: 'Comité de Expertos', href: '/activacion/comite', icon: UserCheck },
-      { name: 'Activación Individual', href: '/activacion/individual', icon: Zap },
-      { name: 'Ingreso Extraordinario', href: '/activacion/extraordinario', icon: AlertCircle },
+      { id: 'planificacion-estrategica', name: 'Planificación Estratégica', href: '/activacion/planificacion', icon: 'fa-flag' },
+      { id: 'ingreso-requerimientos', name: 'Ingreso de Requerimientos', href: '/iniciativas/nueva', icon: 'fa-plus-circle', badge: 'new' },
+      { id: 'informes-factibilidad', name: 'Informes de Factibilidad', href: '/activacion/factibilidad', icon: 'fa-file-signature', badge: 12 },
+      { id: 'comite-expertos', name: 'Comité de Expertos', href: '/activacion/comite', icon: 'fa-users', badge: 8 },
+      { id: 'banco-reserva', name: 'Banco de Reserva', href: '/banco-reserva', icon: 'fa-university', badge: 45 },
+      { id: 'plan-anual-digital', name: 'Plan Anual Digitalización', href: '/plan-anual', icon: 'fa-calendar-check' },
+      { id: 'activacion-individual', name: 'Activación Individual', href: '/activacion/individual', icon: 'fa-check-circle', badge: 3 },
+      { id: 'ingreso-extraordinario', name: 'Ingreso Extraordinario', href: '/activacion/extraordinario', icon: 'fa-exclamation-triangle' },
     ],
   },
   {
+    id: 'implementacion',
     name: 'Implementación',
-    icon: FolderKanban,
-    roles: ['td', 'admin'],
+    icon: 'fa-cogs',
+    colorClass: 'nav-icon-implementacion',
     items: [
-      { name: 'Proyectos', href: '/proyectos', icon: FolderKanban },
-      { name: 'Kick-Off', href: '/implementacion/kickoff', icon: Rocket },
-      { name: 'Análisis y Diseño', href: '/implementacion/analisis', icon: Compass },
-      { name: 'Construcción', href: '/implementacion/construccion', icon: Hammer },
-      { name: 'Pruebas', href: '/implementacion/pruebas', icon: TestTube },
-      { name: 'Transición', href: '/implementacion/transicion', icon: ArrowRightLeft },
-      { name: 'Go-Live', href: '/implementacion/golive', icon: PlayCircle },
+      { id: 'kick-off', name: 'Planificación / Kick Off', href: '/implementacion/kickoff', icon: 'fa-play-circle', badge: 5 },
+      { id: 'analisis-diseno', name: 'Análisis y Diseño', href: '/implementacion/analisis', icon: 'fa-drafting-compass', badge: 8 },
+      { id: 'construccion', name: 'Construcción', href: '/implementacion/construccion', icon: 'fa-hammer', badge: 12 },
+      { id: 'pruebas', name: 'Pruebas', href: '/implementacion/pruebas', icon: 'fa-vial', badge: 4 },
+      { id: 'transicion', name: 'Transición', href: '/implementacion/transicion', icon: 'fa-exchange-alt', badge: 2 },
+      { id: 'go-live', name: 'Go Live y Soporte', href: '/implementacion/golive', icon: 'fa-flag-checkered', badge: 3 },
     ],
   },
   {
+    id: 'seguimiento',
     name: 'Seguimiento y Control',
-    icon: Activity,
-    roles: ['td', 'admin', 'executive'],
+    icon: 'fa-chart-line',
+    colorClass: 'nav-icon-seguimiento',
     items: [
-      { name: 'Control Presupuestario', href: '/seguimiento/presupuesto', icon: Calculator },
-      { name: 'Control Planificación', href: '/seguimiento/planificacion', icon: CalendarClock },
-      { name: 'Gestión de Riesgos', href: '/seguimiento/riesgos', icon: AlertTriangle },
-      { name: 'Control Gobernanza', href: '/seguimiento/gobernanza', icon: Shield },
-      { name: 'Gestión Documental', href: '/seguimiento/documentos', icon: FileArchive },
-      { name: 'Evaluación y Métricas', href: '/seguimiento/metricas', icon: LineChart },
+      { id: 'control-presupuestario', name: 'Control Presupuestario', href: '/seguimiento/presupuesto', icon: 'fa-coins' },
+      { id: 'control-planificacion', name: 'Control de Planificación', href: '/seguimiento/planificacion', icon: 'fa-tasks' },
+      { id: 'gestion-riesgos', name: 'Gestión de Riesgos', href: '/seguimiento/riesgos', icon: 'fa-exclamation-circle' },
+      { id: 'control-gobernanza', name: 'Control de Gobernanza', href: '/seguimiento/gobernanza', icon: 'fa-gavel' },
+      { id: 'gestion-documental', name: 'Gestión Documental', href: '/seguimiento/documentos', icon: 'fa-folder-open' },
+      { id: 'evaluacion-metricas', name: 'Evaluación y Métricas', href: '/seguimiento/metricas', icon: 'fa-clipboard-check' },
     ],
   },
   {
+    id: 'historia',
     name: 'Historia',
-    icon: Archive,
-    roles: ['td', 'admin'],
+    icon: 'fa-history',
+    colorClass: 'nav-icon-historia',
     items: [
-      { name: 'Banco de Reserva', href: '/banco-reserva', icon: Archive },
-      { name: 'Plan Anual', href: '/plan-anual', icon: Calendar },
-      { name: 'Proceso de Cierre', href: '/historia/cierre', icon: CheckCircle2 },
-      { name: 'Proyectos Cerrados', href: '/historia/cerrados', icon: Archive },
-      { name: 'Proyectos Rechazados', href: '/historia/rechazados', icon: XCircle },
+      { id: 'proceso-cierre', name: 'En Proceso de Cierre', href: '/historia/cierre', icon: 'fa-hourglass-half', badge: 4 },
+      { id: 'proyectos-cerrados', name: 'Proyectos Cerrados', href: '/historia/cerrados', icon: 'fa-check-double', badge: 127 },
+      { id: 'rechazados', name: 'Rechazados', href: '/historia/rechazados', icon: 'fa-times-circle', badge: 18 },
+      { id: 'suspendidos', name: 'Suspendidos', href: '/historia/suspendidos', icon: 'fa-pause-circle', badge: 6 },
+      { id: 'eliminados-banco', name: 'Eliminados del Banco', href: '/historia/eliminados', icon: 'fa-trash-alt', badge: 23 },
     ],
   },
   {
+    id: 'compras',
     name: 'Gestión de Compras',
-    icon: ShoppingCart,
-    roles: ['td', 'admin'],
+    icon: 'fa-shopping-cart',
+    colorClass: 'nav-icon-compras',
     items: [
-      { name: 'Solicitudes Sin Contrato', href: '/compras/solicitudes', icon: FileQuestion },
-      { name: 'Evaluación Proveedores', href: '/compras/proveedores', icon: Star },
-      { name: 'Contratos', href: '/compras/contratos', icon: FileSignature },
-      { name: 'Órdenes', href: '/compras/ordenes', icon: ClipboardList },
+      { id: 'solicitudes-sin-contrato', name: 'Solicitudes Sin Contrato Marco', href: '/compras/solicitudes', icon: 'fa-file-invoice' },
+      { id: 'evaluacion-proveedores', name: 'Evaluación de Proveedores', href: '/compras/proveedores', icon: 'fa-balance-scale' },
+      { id: 'gestion-contratos', name: 'Gestión de Contratos', href: '/compras/contratos', icon: 'fa-file-contract' },
+      { id: 'seguimiento-ordenes', name: 'Seguimiento de Órdenes', href: '/compras/ordenes', icon: 'fa-receipt' },
     ],
   },
   {
+    id: 'configuracion',
     name: 'Configuración',
-    icon: Settings,
-    roles: ['admin'],
+    icon: 'fa-sliders-h',
+    colorClass: 'nav-icon-configuracion',
     items: [
-      { name: 'General', href: '/configuracion', icon: Settings },
-      { name: 'Flujos de Trabajo', href: '/configuracion/flujos', icon: Workflow },
-      { name: 'Plantillas', href: '/configuracion/plantillas', icon: LayoutTemplate },
-      { name: 'Integraciones', href: '/configuracion/integraciones', icon: Plug },
+      { id: 'catalogos-maestros', name: 'Catálogos Maestros', href: '/configuracion/catalogos', icon: 'fa-book' },
+      { id: 'usuarios-permisos', name: 'Usuarios y Permisos', href: '/configuracion/usuarios', icon: 'fa-user-cog' },
+      { id: 'flujos-trabajo', name: 'Flujos de Trabajo', href: '/configuracion/flujos', icon: 'fa-project-diagram' },
+      { id: 'plantillas', name: 'Plantillas', href: '/configuracion/plantillas', icon: 'fa-file-code' },
+      { id: 'integraciones', name: 'Integraciones', href: '/configuracion/integraciones', icon: 'fa-plug' },
     ],
   },
 ];
+
+// Color styles for each section
+const sectionColors: Record<string, { bg: string; color: string }> = {
+  'nav-icon-dashboard': { bg: 'rgba(0, 181, 216, 0.15)', color: '#00b5d8' },
+  'nav-icon-activacion': { bg: 'rgba(49, 130, 206, 0.15)', color: '#3182ce' },
+  'nav-icon-implementacion': { bg: 'rgba(56, 161, 105, 0.15)', color: '#38a169' },
+  'nav-icon-seguimiento': { bg: 'rgba(214, 158, 46, 0.15)', color: '#d69e2e' },
+  'nav-icon-historia': { bg: 'rgba(113, 128, 150, 0.15)', color: '#718096' },
+  'nav-icon-compras': { bg: 'rgba(159, 122, 234, 0.15)', color: '#9f7aea' },
+  'nav-icon-configuracion': { bg: 'rgba(237, 100, 166, 0.15)', color: '#ed64a6' },
+};
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -162,197 +135,192 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed }: SidebarProps) {
   const location = useLocation();
-  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
+  const [expandedSection, setExpandedSection] = useState<string | null>('dashboard');
 
-  const toggleSection = (sectionName: string) => {
-    setExpandedSections((prev) =>
-      prev.includes(sectionName)
-        ? prev.filter((s) => s !== sectionName)
-        : [...prev, sectionName]
-    );
+  // Toggle section - accordion style (only one section open at a time)
+  const toggleSection = (sectionId: string) => {
+    setExpandedSection(prev => prev === sectionId ? null : sectionId);
   };
 
-  const canViewSection = (roles: string[]): boolean => {
-    if (roles.includes('all')) return true;
-    if (roles.includes('admin') && isAdmin(user)) return true;
-    if (roles.includes('td') && isJefeTD(user)) return true;
-    if (roles.includes('comite') && isComite(user)) return true;
-    if (roles.includes('executive') && (isJefeTD(user) || isCGEDx(user))) return true;
-    if (roles.includes('demandante') && user?.rol === 'demandante') return true;
-    return false;
-  };
-
-  const filteredNav = navigation.filter((section) => {
-    if (!canViewSection(section.roles)) return false;
-
-    if (searchQuery) {
-      const hasMatchingItem = section.items.some(
-        (item) =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          section.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      return hasMatchingItem;
-    }
-
-    return true;
-  });
-
+  // Check if a route is active
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
 
+  // Check if section has active item
   const isSectionActive = (section: NavSection) => {
-    return section.items.some((item) => isActive(item.href));
+    return section.items.some(item => isActive(item.href));
   };
 
   // Auto-expand section with active item
-  const activeSectionName = navigation.find((s) => isSectionActive(s))?.name;
-  if (activeSectionName && !expandedSections.includes(activeSectionName)) {
-    setExpandedSections((prev) => [...prev, activeSectionName]);
-  }
+  useEffect(() => {
+    const activeSection = navigation.find(s => isSectionActive(s));
+    if (activeSection && expandedSection !== activeSection.id) {
+      setExpandedSection(activeSection.id);
+    }
+  }, [location.pathname]);
+
+  // Filter navigation based on search
+  const filteredNav = navigation.map(section => {
+    if (!searchQuery) return section;
+
+    const matchingItems = section.items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const sectionMatches = section.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (sectionMatches) return section;
+    if (matchingItems.length > 0) {
+      return { ...section, items: matchingItems };
+    }
+    return null;
+  }).filter(Boolean) as NavSection[];
+
+  // When searching, expand all matching sections
+  useEffect(() => {
+    if (searchQuery) {
+      // Expand all sections when searching
+    }
+  }, [searchQuery]);
 
   return (
     <aside
       className={clsx(
-        'fixed top-[60px] left-0 h-[calc(100vh-60px)] bg-white shadow-md overflow-y-auto overflow-x-hidden transition-all duration-300 z-[999]',
+        'fixed top-[60px] left-0 h-[calc(100vh-60px)] bg-white overflow-y-auto overflow-x-hidden transition-all duration-300 z-[999]',
         isCollapsed ? 'w-[60px]' : 'w-[280px]'
       )}
+      style={{ boxShadow: '2px 0 10px rgba(0,0,0,0.05)' }}
     >
       {/* Sidebar Search */}
       {!isCollapsed && (
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar menú..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full py-2.5 pl-9 pr-3 border border-gray-200 rounded-lg text-sm transition-all focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10"
-            />
-          </div>
+        <div className="p-4 border-b border-gray-200 relative">
+          <i className="fas fa-search absolute left-7 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full py-2.5 pl-10 pr-3 border border-gray-200 rounded-lg text-sm transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
         </div>
       )}
 
       {/* Navigation */}
       <nav className={clsx('py-2.5', isCollapsed && 'pt-4')}>
         {filteredNav.map((section) => {
-          const SectionIcon = section.icon;
-          const isExpanded = expandedSections.includes(section.name) || !!searchQuery;
+          const isExpanded = expandedSection === section.id || !!searchQuery;
           const sectionActive = isSectionActive(section);
-
-          // Filter items based on search
-          const visibleItems = searchQuery
-            ? section.items.filter(
-                (item) =>
-                  item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  section.name.toLowerCase().includes(searchQuery.toLowerCase())
-              )
-            : section.items;
+          const colorStyle = sectionColors[section.colorClass];
 
           if (isCollapsed) {
-            // Collapsed view - show only first item icon
+            // Collapsed view - show only icon linking to first item
             const firstItem = section.items[0];
             return (
               <Link
-                key={section.name}
+                key={section.id}
                 to={firstItem.href}
                 className={clsx(
-                  'flex items-center justify-center py-3 cursor-pointer transition-all border-l-[3px] border-transparent',
+                  'flex items-center justify-center py-3 cursor-pointer transition-all border-l-[3px]',
                   'hover:bg-gray-50',
-                  sectionActive && 'bg-gradient-to-r from-accent/10 to-transparent border-l-accent'
+                  sectionActive
+                    ? 'bg-gradient-to-r from-blue-50 to-transparent border-l-blue-500'
+                    : 'border-transparent'
                 )}
                 title={section.name}
               >
                 <div
-                  className={clsx(
-                    'w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0',
-                    sectionActive ? 'bg-accent/15 text-accent' : 'bg-gray-100 text-gray-500'
-                  )}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg"
+                  style={{
+                    background: sectionActive ? colorStyle.bg : 'rgba(0,0,0,0.05)',
+                    color: sectionActive ? colorStyle.color : '#718096'
+                  }}
                 >
-                  <SectionIcon className="h-5 w-5" />
+                  <i className={`fas ${section.icon}`}></i>
                 </div>
               </Link>
             );
           }
 
           return (
-            <div key={section.name} className="mb-1">
+            <div key={section.id} className="mb-1">
               {/* Section Header */}
-              <button
-                onClick={() => toggleSection(section.name)}
+              <div
+                onClick={() => toggleSection(section.id)}
                 className={clsx(
-                  'w-full flex items-center py-3 px-5 cursor-pointer transition-all',
+                  'flex items-center py-3 px-5 cursor-pointer transition-all border-l-[3px] select-none',
                   'hover:bg-gray-50',
-                  sectionActive && 'bg-gradient-to-r from-accent/5 to-transparent'
+                  sectionActive
+                    ? 'bg-gradient-to-r from-blue-50 to-transparent border-l-blue-500'
+                    : 'border-transparent'
                 )}
               >
                 <div
-                  className={clsx(
-                    'w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0 mr-3',
-                    sectionActive ? 'bg-accent/15 text-accent' : 'bg-gray-100 text-gray-500'
-                  )}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg mr-3 flex-shrink-0 text-lg"
+                  style={{
+                    background: colorStyle.bg,
+                    color: colorStyle.color
+                  }}
                 >
-                  <SectionIcon className="h-5 w-5" />
+                  <i className={`fas ${section.icon}`}></i>
                 </div>
-                <span
-                  className={clsx(
-                    'flex-1 text-[0.95rem] font-medium text-left whitespace-nowrap overflow-hidden text-ellipsis',
-                    sectionActive ? 'text-accent' : 'text-gray-700'
-                  )}
-                >
+                <span className="flex-1 text-[0.95rem] font-medium text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis">
                   {section.name}
                 </span>
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                <i className={clsx(
+                  'fas fa-chevron-right text-gray-400 text-xs transition-transform duration-300',
+                  isExpanded && 'rotate-90'
+                )}></i>
+              </div>
+
+              {/* Submenu */}
+              <div
+                className={clsx(
+                  'overflow-hidden transition-all duration-400 bg-gray-50',
+                  isExpanded ? 'max-h-[1000px]' : 'max-h-0'
                 )}
-              </button>
+              >
+                {section.items.map((item) => {
+                  const itemActive = isActive(item.href);
+                  const badge = sidebarBadgeCounts[item.id] || item.badge;
 
-              {/* Section Items */}
-              {isExpanded && (
-                <div className="ml-4 pl-4 border-l border-gray-200">
-                  {visibleItems.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.href);
-
-                    return (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        className={clsx(
-                          'flex items-center py-2.5 px-3 cursor-pointer transition-all rounded-lg mx-2 my-0.5',
-                          'hover:bg-gray-100',
-                          active && 'bg-accent/10 text-accent'
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.href}
+                      className={clsx(
+                        'flex items-center py-2.5 pr-5 cursor-pointer transition-all border-l-[3px] text-sm',
+                        'hover:bg-gray-100 hover:text-blue-600',
+                        itemActive
+                          ? 'bg-gray-100 text-blue-600 border-l-blue-500 font-medium'
+                          : 'text-gray-600 border-transparent'
+                      )}
+                      style={{ paddingLeft: '67px' }}
+                    >
+                      <i className={clsx(
+                        `fas ${item.icon} mr-2.5 text-xs w-4 text-center`,
+                        itemActive ? 'text-blue-600' : 'text-gray-400'
+                      )}></i>
+                      <span className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+                        {item.name}
+                      </span>
+                      {badge && (
+                        <span className={clsx(
+                          'ml-auto px-2 py-0.5 rounded-full text-[0.7rem] font-medium',
+                          badge === 'new'
+                            ? 'text-white'
+                            : 'bg-gray-200 text-gray-600'
                         )}
-                      >
-                        <Icon
-                          className={clsx(
-                            'h-4 w-4 mr-3 flex-shrink-0',
-                            active ? 'text-accent' : 'text-gray-400'
-                          )}
-                        />
-                        <span
-                          className={clsx(
-                            'text-sm whitespace-nowrap overflow-hidden text-ellipsis',
-                            active ? 'text-accent font-medium' : 'text-gray-600'
-                          )}
+                        style={badge === 'new' ? { background: '#63b3ed' } : undefined}
                         >
-                          {item.name}
+                          {badge === 'new' ? 'Nuevo' : badge}
                         </span>
-                        {item.badge && (
-                          <span className="ml-auto px-2 py-0.5 rounded-full text-[0.7rem] font-medium bg-accent/10 text-accent">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
@@ -366,7 +334,7 @@ export default function Sidebar({ isCollapsed }: SidebarProps) {
             <br />
             Iniciativas y Proyectos
           </div>
-          <div className="text-xs text-gray-400 mt-1">v2.0.0 · CGE Chile</div>
+          <div className="text-xs text-gray-400 mt-1">v1.0 · CGE Chile · 2026</div>
         </div>
       )}
     </aside>

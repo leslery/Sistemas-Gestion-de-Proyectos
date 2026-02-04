@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
+import { ToastProvider, GlobalToast } from './components/ui/Toast';
 
 // Dashboard Pages
 import Dashboard from './pages/Dashboard';
@@ -91,6 +92,7 @@ function App() {
   }
 
   return (
+    <ToastProvider>
     <Routes>
       <Route path="/login" element={<Login />} />
 
@@ -107,10 +109,10 @@ function App() {
         {/* Dashboard Routes */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="dashboard-ejecutivo" element={<DashboardEjecutivo />} />
-        <Route path="dashboard-portafolio" element={<DashboardPortafolio />} />
-        <Route path="dashboard-financiero" element={<DashboardFinanciero />} />
-        <Route path="dashboard-gobernanza" element={<DashboardGobernanza />} />
-        <Route path="centro-reportes" element={<CentroReportes />} />
+        <Route path="dashboards/portafolio" element={<DashboardPortafolio />} />
+        <Route path="dashboards/financiero" element={<DashboardFinanciero />} />
+        <Route path="dashboards/gobernanza" element={<DashboardGobernanza />} />
+        <Route path="dashboards/reportes" element={<CentroReportes />} />
 
         {/* Activación y Aprobación Routes */}
         <Route path="pipeline" element={<WorkflowPipeline />} />
@@ -120,50 +122,52 @@ function App() {
         <Route path="evaluaciones" element={<Evaluaciones />} />
         <Route path="banco-reserva" element={<BancoReserva />} />
         <Route path="plan-anual" element={<PlanAnual />} />
-        <Route path="planificacion-estrategica" element={<PlanificacionEstrategica />} />
-        <Route path="informe-factibilidad" element={<InformeFactibilidad />} />
-        <Route path="comite-expertos" element={<ComiteExpertos />} />
-        <Route path="activacion-individual" element={<ActivacionIndividual />} />
-        <Route path="ingreso-extraordinario" element={<IngresoExtraordinario />} />
+        <Route path="activacion/planificacion" element={<PlanificacionEstrategica />} />
+        <Route path="activacion/factibilidad" element={<InformeFactibilidad />} />
+        <Route path="activacion/comite" element={<ComiteExpertos />} />
+        <Route path="activacion/individual" element={<ActivacionIndividual />} />
+        <Route path="activacion/extraordinario" element={<IngresoExtraordinario />} />
 
         {/* Implementación Routes */}
         <Route path="proyectos" element={<Proyectos />} />
         <Route path="proyectos/:id" element={<ProyectoDetalle />} />
-        <Route path="kick-off" element={<KickOff />} />
-        <Route path="analisis-diseno" element={<AnalisisDiseno />} />
-        <Route path="construccion" element={<Construccion />} />
-        <Route path="pruebas" element={<Pruebas />} />
-        <Route path="transicion" element={<Transicion />} />
-        <Route path="go-live" element={<GoLive />} />
+        <Route path="implementacion/kickoff" element={<KickOff />} />
+        <Route path="implementacion/analisis" element={<AnalisisDiseno />} />
+        <Route path="implementacion/construccion" element={<Construccion />} />
+        <Route path="implementacion/pruebas" element={<Pruebas />} />
+        <Route path="implementacion/transicion" element={<Transicion />} />
+        <Route path="implementacion/golive" element={<GoLive />} />
 
         {/* Seguimiento y Control Routes */}
-        <Route path="control-presupuestario" element={<ControlPresupuestario />} />
-        <Route path="control-planificacion" element={<ControlPlanificacion />} />
-        <Route path="gestion-riesgos" element={<GestionRiesgos />} />
-        <Route path="control-gobernanza" element={<ControlGobernanza />} />
-        <Route path="gestion-documental" element={<GestionDocumental />} />
-        <Route path="evaluacion-metricas" element={<EvaluacionMetricas />} />
+        <Route path="seguimiento/presupuesto" element={<ControlPresupuestario />} />
+        <Route path="seguimiento/planificacion" element={<ControlPlanificacion />} />
+        <Route path="seguimiento/riesgos" element={<GestionRiesgos />} />
+        <Route path="seguimiento/gobernanza" element={<ControlGobernanza />} />
+        <Route path="seguimiento/documentos" element={<GestionDocumental />} />
+        <Route path="seguimiento/metricas" element={<EvaluacionMetricas />} />
 
         {/* Historia Routes */}
-        <Route path="proceso-cierre" element={<ProcesoCierre />} />
-        <Route path="proyectos-cerrados" element={<ProyectosCerrados />} />
-        <Route path="proyectos-rechazados" element={<ProyectosRechazados />} />
+        <Route path="historia/cierre" element={<ProcesoCierre />} />
+        <Route path="historia/cerrados" element={<ProyectosCerrados />} />
+        <Route path="historia/rechazados" element={<ProyectosRechazados />} />
 
         {/* Gestión de Compras Routes */}
-        <Route path="solicitudes-sin-contrato" element={<SolicitudesSinContrato />} />
-        <Route path="evaluacion-proveedores" element={<EvaluacionProveedores />} />
-        <Route path="contratos" element={<Contratos />} />
-        <Route path="ordenes-compra" element={<Ordenes />} />
+        <Route path="compras/solicitudes" element={<SolicitudesSinContrato />} />
+        <Route path="compras/proveedores" element={<EvaluacionProveedores />} />
+        <Route path="compras/contratos" element={<Contratos />} />
+        <Route path="compras/ordenes" element={<Ordenes />} />
 
-        {/* Configuración */}
+        {/* Configuración Routes */}
         <Route path="configuracion" element={<Configuracion />} />
-        <Route path="flujos-trabajo" element={<FlujosTrabajo />} />
-        <Route path="plantillas" element={<Plantillas />} />
-        <Route path="integraciones" element={<Integraciones />} />
+        <Route path="configuracion/flujos" element={<FlujosTrabajo />} />
+        <Route path="configuracion/plantillas" element={<Plantillas />} />
+        <Route path="configuracion/integraciones" element={<Integraciones />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    <GlobalToast />
+    </ToastProvider>
   );
 }
 
