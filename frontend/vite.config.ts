@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/Sistemas-Gestion-de-Proyectos/',
+  // Usar base solo en producción (para GitHub Pages)
+  base: command === 'build' ? '/Sistemas-Gestion-de-Proyectos/' : '/',
   server: {
     port: 8080,
     strictPort: true,
@@ -14,4 +15,4 @@ export default defineConfig({
       }
     }
   }
-})
+}))

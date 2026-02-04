@@ -23,6 +23,88 @@ export default function Proyectos() {
     loadProyectos();
   }, [filters]);
 
+  // Datos mock para modo demo
+  const getMockProyectos = (): Proyecto[] => [
+    {
+      id: 1,
+      codigo_proyecto: 'PRY-2026-001',
+      nombre: 'Modernización ERP SAP S/4HANA',
+      descripcion: 'Migración del sistema ERP a SAP S/4HANA Cloud',
+      area_demandante_nombre: 'Tecnología de la Información',
+      presupuesto_asignado: 850000000,
+      avance_porcentaje: 65,
+      semaforo_salud: 'verde' as SemaforoSalud,
+      estado: 'en_ejecucion' as EstadoProyecto,
+      riesgos_abiertos: 2,
+      issues_abiertos: 1,
+    },
+    {
+      id: 2,
+      codigo_proyecto: 'PRY-2026-002',
+      nombre: 'Portal de Autoatención Clientes',
+      descripcion: 'Desarrollo de portal web para autogestión de clientes',
+      area_demandante_nombre: 'Comercial',
+      presupuesto_asignado: 320000000,
+      avance_porcentaje: 40,
+      semaforo_salud: 'amarillo' as SemaforoSalud,
+      estado: 'en_ejecucion' as EstadoProyecto,
+      riesgos_abiertos: 3,
+      issues_abiertos: 2,
+    },
+    {
+      id: 3,
+      codigo_proyecto: 'PRY-2026-003',
+      nombre: 'Sistema CRM Salesforce',
+      descripcion: 'Implementación de CRM para gestión comercial',
+      area_demandante_nombre: 'Comercial',
+      presupuesto_asignado: 450000000,
+      avance_porcentaje: 85,
+      semaforo_salud: 'verde' as SemaforoSalud,
+      estado: 'en_ejecucion' as EstadoProyecto,
+      riesgos_abiertos: 1,
+      issues_abiertos: 0,
+    },
+    {
+      id: 4,
+      codigo_proyecto: 'PRY-2026-004',
+      nombre: 'Migración Cloud AWS',
+      descripcion: 'Migración de infraestructura on-premise a AWS',
+      area_demandante_nombre: 'Tecnología de la Información',
+      presupuesto_asignado: 280000000,
+      avance_porcentaje: 25,
+      semaforo_salud: 'rojo' as SemaforoSalud,
+      estado: 'en_ejecucion' as EstadoProyecto,
+      riesgos_abiertos: 4,
+      issues_abiertos: 3,
+    },
+    {
+      id: 5,
+      codigo_proyecto: 'PRY-2025-089',
+      nombre: 'Sistema de Business Intelligence',
+      descripcion: 'Plataforma de análisis y reportería corporativa',
+      area_demandante_nombre: 'Finanzas',
+      presupuesto_asignado: 180000000,
+      avance_porcentaje: 100,
+      semaforo_salud: 'verde' as SemaforoSalud,
+      estado: 'completado' as EstadoProyecto,
+      riesgos_abiertos: 0,
+      issues_abiertos: 0,
+    },
+    {
+      id: 6,
+      codigo_proyecto: 'PRY-2026-005',
+      nombre: 'App Móvil Corporativa',
+      descripcion: 'Aplicación móvil para colaboradores',
+      area_demandante_nombre: 'Recursos Humanos',
+      presupuesto_asignado: 95000000,
+      avance_porcentaje: 0,
+      semaforo_salud: 'verde' as SemaforoSalud,
+      estado: 'banco_reserva' as EstadoProyecto,
+      riesgos_abiertos: 0,
+      issues_abiertos: 0,
+    },
+  ];
+
   const loadProyectos = async () => {
     setIsLoading(true);
     try {
@@ -31,9 +113,31 @@ export default function Proyectos() {
       if (filters.semaforo) params.semaforo = filters.semaforo;
 
       const data = await proyectosService.getAll(params);
-      setProyectos(data);
+
+      // Si la API devuelve datos vacíos, usar mock data
+      if (!data || data.length === 0) {
+        let mockData = getMockProyectos();
+        if (filters.estado) {
+          mockData = mockData.filter(p => p.estado === filters.estado);
+        }
+        if (filters.semaforo) {
+          mockData = mockData.filter(p => p.semaforo_salud === filters.semaforo);
+        }
+        setProyectos(mockData);
+      } else {
+        setProyectos(data);
+      }
     } catch (error) {
       console.error('Error loading proyectos:', error);
+      // Usar datos mock cuando la API no está disponible
+      let mockData = getMockProyectos();
+      if (filters.estado) {
+        mockData = mockData.filter(p => p.estado === filters.estado);
+      }
+      if (filters.semaforo) {
+        mockData = mockData.filter(p => p.semaforo_salud === filters.semaforo);
+      }
+      setProyectos(mockData);
     } finally {
       setIsLoading(false);
     }

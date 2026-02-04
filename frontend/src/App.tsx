@@ -53,6 +53,8 @@ import EvaluacionMetricas from './pages/seguimiento/EvaluacionMetricas';
 import ProcesoCierre from './pages/historia/ProcesoCierre';
 import ProyectosCerrados from './pages/historia/ProyectosCerrados';
 import ProyectosRechazados from './pages/historia/ProyectosRechazados';
+import ProyectosSuspendidos from './pages/historia/ProyectosSuspendidos';
+import ProyectosEliminados from './pages/historia/ProyectosEliminados';
 
 // Compras Module
 import SolicitudesSinContrato from './pages/compras/SolicitudesSinContrato';
@@ -154,6 +156,8 @@ function App() {
         <Route path="historia/cierre" element={<ProcesoCierre />} />
         <Route path="historia/cerrados" element={<ProyectosCerrados />} />
         <Route path="historia/rechazados" element={<ProyectosRechazados />} />
+        <Route path="historia/suspendidos" element={<ProyectosSuspendidos />} />
+        <Route path="historia/eliminados" element={<ProyectosEliminados />} />
 
         {/* Gestión de Compras Routes */}
         <Route path="compras/solicitudes" element={<SolicitudesSinContrato />} />

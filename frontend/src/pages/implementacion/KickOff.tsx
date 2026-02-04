@@ -11,9 +11,11 @@ import {
   Clock,
   ChevronRight,
   Play,
+  X,
 } from 'lucide-react';
 import { KPICard } from '../../components/ui/KPICard';
 import { FaseTimeline, Fase } from '../../components/workflow/FaseTimeline';
+import { useToast } from '../../components/ui/Toast';
 
 interface ProyectoKickOff {
   id: number;
@@ -35,8 +37,40 @@ const proyectos: ProyectoKickOff[] = [
 
 export default function KickOff() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pendiente' | 'realizado'>('all');
+  const [selectedProyecto, setSelectedProyecto] = useState<ProyectoKickOff | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [kickOffForm, setKickOffForm] = useState({
+    fecha: new Date().toISOString().split('T')[0],
+    hora: '10:00',
+    participantes: '',
+    objetivos: '',
+    ubicacion: 'Sala de Reuniones Principal',
+  });
+
+  const handleIniciarKickOff = (proyecto: ProyectoKickOff) => {
+    setSelectedProyecto(proyecto);
+    setShowModal(true);
+  };
+
+  const handleConfirmarKickOff = () => {
+    if (!kickOffForm.fecha || !kickOffForm.hora) {
+      showToast('Por favor complete los campos requeridos', 'error');
+      return;
+    }
+    showToast(`Kick-Off programado para ${selectedProyecto?.nombre}`, 'success');
+    setShowModal(false);
+    setSelectedProyecto(null);
+    setKickOffForm({
+      fecha: new Date().toISOString().split('T')[0],
+      hora: '10:00',
+      participantes: '',
+      objetivos: '',
+      ubicacion: 'Sala de Reuniones Principal',
+    });
+  };
 
   const filteredProyectos = proyectos.filter((p) => {
     if (searchQuery && !p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) && !p.codigo.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -144,7 +178,10 @@ export default function KickOff() {
                     Realizado
                   </span>
                 ) : (
-                  <button className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors">
+                  <button
+                    onClick={() => handleIniciarKickOff(proyecto)}
+                    className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+                  >
                     <Play className="h-4 w-4" />
                     Iniciar Kick-Off
                   </button>
@@ -202,6 +239,105 @@ export default function KickOff() {
           </div>
         ))}
       </div>
+
+      {/* Modal de Kick-Off */}
+      {showModal && selectedProyecto && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Programar Kick-Off</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {selectedProyecto.codigo} - {selectedProyecto.nombre}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha *
+                  </label>
+                  <input
+                    type="date"
+                    value={kickOffForm.fecha}
+                    onChange={(e) => setKickOffForm({ ...kickOffForm, fecha: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hora *
+                  </label>
+                  <input
+                    type="time"
+                    value={kickOffForm.hora}
+                    onChange={(e) => setKickOffForm({ ...kickOffForm, hora: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ubicación
+                </label>
+                <input
+                  type="text"
+                  value={kickOffForm.ubicacion}
+                  onChange={(e) => setKickOffForm({ ...kickOffForm, ubicacion: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
+                  placeholder="Sala de reuniones o link de videollamada"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Participantes (emails separados por coma)
+                </label>
+                <input
+                  type="text"
+                  value={kickOffForm.participantes}
+                  onChange={(e) => setKickOffForm({ ...kickOffForm, participantes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
+                  placeholder="correo1@empresa.cl, correo2@empresa.cl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Objetivos de la reunión
+                </label>
+                <textarea
+                  value={kickOffForm.objetivos}
+                  onChange={(e) => setKickOffForm({ ...kickOffForm, objetivos: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent resize-none"
+                  placeholder="Describa los objetivos principales del kick-off..."
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmarKickOff}
+                className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Rocket className="h-4 w-4" />
+                Programar Kick-Off
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

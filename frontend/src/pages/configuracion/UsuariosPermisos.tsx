@@ -16,6 +16,10 @@ import {
   Unlock,
   Settings,
   User,
+  Power,
+  AlertTriangle,
+  ArrowRight,
+  UserMinus,
 } from 'lucide-react';
 
 // Types
@@ -40,6 +44,8 @@ interface Rol {
   usuarios: number;
   permisos: number;
   predefinido: boolean;
+  activo: boolean;
+  permisosConfig?: { [permisoId: string]: { ver: boolean; crear: boolean; editar: boolean; eliminar: boolean } };
 }
 
 interface Permiso {
@@ -70,12 +76,12 @@ const usuariosMock: Usuario[] = [
 ];
 
 const rolesMock: Rol[] = [
-  { id: 1, nombre: 'Administrador', descripcion: 'Acceso completo al sistema. Puede gestionar usuarios, roles y todas las configuraciones.', color: '#e53e3e', icono: 'shield', usuarios: 1, permisos: 40, predefinido: true },
-  { id: 2, nombre: 'PMO Manager', descripcion: 'Gestión del portafolio de proyectos. Acceso a dashboards ejecutivos y aprobaciones.', color: '#3182ce', icono: 'briefcase', usuarios: 1, permisos: 40, predefinido: true },
-  { id: 3, nombre: 'Project Manager', descripcion: 'Gestión de proyectos asignados, seguimiento, control y reportes de sus proyectos.', color: '#38a169', icono: 'folder', usuarios: 3, permisos: 35, predefinido: true },
-  { id: 4, nombre: 'Analista', descripcion: 'Análisis de datos y generación de reportes. Acceso de lectura a métricas y KPIs.', color: '#00b5d8', icono: 'chart', usuarios: 1, permisos: 35, predefinido: true },
-  { id: 5, nombre: 'Usuario Estándar', descripcion: 'Acceso básico para ingresar requerimientos y consultar estado de iniciativas.', color: '#805ad5', icono: 'user', usuarios: 1, permisos: 31, predefinido: true },
-  { id: 6, nombre: 'Visualizador', descripcion: 'Solo lectura. Puede ver dashboards y reportes sin capacidad de edición.', color: '#718096', icono: 'eye', usuarios: 1, permisos: 7, predefinido: true },
+  { id: 1, nombre: 'Administrador', descripcion: 'Acceso completo al sistema. Puede gestionar usuarios, roles y todas las configuraciones.', color: '#e53e3e', icono: 'shield', usuarios: 1, permisos: 40, predefinido: true, activo: true },
+  { id: 2, nombre: 'PMO Manager', descripcion: 'Gestión del portafolio de proyectos. Acceso a dashboards ejecutivos y aprobaciones.', color: '#3182ce', icono: 'briefcase', usuarios: 1, permisos: 40, predefinido: true, activo: true },
+  { id: 3, nombre: 'Project Manager', descripcion: 'Gestión de proyectos asignados, seguimiento, control y reportes de sus proyectos.', color: '#38a169', icono: 'folder', usuarios: 3, permisos: 35, predefinido: true, activo: true },
+  { id: 4, nombre: 'Analista', descripcion: 'Análisis de datos y generación de reportes. Acceso de lectura a métricas y KPIs.', color: '#00b5d8', icono: 'chart', usuarios: 1, permisos: 35, predefinido: true, activo: true },
+  { id: 5, nombre: 'Usuario Estándar', descripcion: 'Acceso básico para ingresar requerimientos y consultar estado de iniciativas.', color: '#805ad5', icono: 'user', usuarios: 1, permisos: 31, predefinido: true, activo: true },
+  { id: 6, nombre: 'Visualizador', descripcion: 'Solo lectura. Puede ver dashboards y reportes sin capacidad de edición.', color: '#718096', icono: 'eye', usuarios: 1, permisos: 7, predefinido: true, activo: true },
 ];
 
 const modulosPermisos = [
@@ -165,19 +171,27 @@ export default function UsuariosPermisos() {
   const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [showNewRolModal, setShowNewRolModal] = useState(false);
   const [editingRol, setEditingRol] = useState<Rol | null>(null);
+  const [roles, setRoles] = useState<Rol[]>(rolesMock);
+  const [usuarios, setUsuarios] = useState<Usuario[]>(usuariosMock);
+  const [deleteConfirmRol, setDeleteConfirmRol] = useState<Rol | null>(null);
   const [newRol, setNewRol] = useState({
     nombre: '',
     descripcion: '',
     color: '#3182ce',
     permisos: {} as { [key: string]: { ver: boolean; crear: boolean; editar: boolean; eliminar: boolean } },
   });
+  const [reassignToRolId, setReassignToRolId] = useState<number | null>(null);
+  const [showReassignSection, setShowReassignSection] = useState(false);
 
-  const filteredUsuarios = usuariosMock.filter((u) => {
+  const filteredUsuarios = usuarios.filter((u) => {
     if (searchQuery && !u.nombreCompleto.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !u.usuario.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterRol !== 'all' && u.rolId.toString() !== filterRol) return false;
     return true;
   });
+
+  // Get users assigned to a specific role
+  const getUsuariosByRol = (rolId: number) => usuarios.filter(u => u.rolId === rolId);
 
   const tabs = [
     { id: 'usuarios', label: 'Usuarios', icon: Users },
@@ -208,10 +222,32 @@ export default function UsuariosPermisos() {
       nombre: rol.nombre,
       descripcion: rol.descripcion,
       color: rol.color,
-      permisos: generarPermisosRol(rol.id),
+      permisos: rol.permisosConfig || generarPermisosRol(rol.id),
     });
+    setReassignToRolId(null);
+    setShowReassignSection(false);
     setShowNewRolModal(true);
   };
+
+  const handleToggleRolActivo = (rolId: number) => {
+    setRoles(roles.map(r =>
+      r.id === rolId ? { ...r, activo: !r.activo } : r
+    ));
+  };
+
+  const handleDeleteRol = (rol: Rol) => {
+    setDeleteConfirmRol(rol);
+  };
+
+  const confirmDeleteRol = () => {
+    if (deleteConfirmRol) {
+      setRoles(roles.filter(r => r.id !== deleteConfirmRol.id));
+      setDeleteConfirmRol(null);
+    }
+  };
+
+  // Get active roles for the matrix
+  const rolesActivos = roles.filter(r => r.activo);
 
   return (
     <div className="space-y-6">
@@ -272,7 +308,7 @@ export default function UsuariosPermisos() {
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
                   >
                     <option value="all">Todos los roles</option>
-                    {rolesMock.map((rol) => (
+                    {roles.map((rol) => (
                       <option key={rol.id} value={rol.id}>{rol.nombre}</option>
                     ))}
                   </select>
@@ -303,7 +339,7 @@ export default function UsuariosPermisos() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredUsuarios.map((usuario) => {
-                      const rol = rolesMock.find(r => r.id === usuario.rolId);
+                      const rol = roles.find(r => r.id === usuario.rolId);
                       return (
                         <tr key={usuario.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
@@ -389,26 +425,47 @@ export default function UsuariosPermisos() {
 
               {/* Roles Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rolesMock.map((rol) => (
+                {roles.map((rol) => (
                   <div
                     key={rol.id}
-                    className="bg-white rounded-xl border border-gray-200 p-5 hover:border-accent/50 transition-colors"
+                    className={`bg-white rounded-xl border p-5 transition-colors ${
+                      rol.activo
+                        ? 'border-gray-200 hover:border-accent/50'
+                        : 'border-gray-200 bg-gray-50 opacity-60'
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${!rol.activo ? 'grayscale' : ''}`}
                           style={{ backgroundColor: `${rol.color}20` }}
                         >
                           <Shield className="h-6 w-6" style={{ color: rol.color }} />
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold text-gray-900">{rol.nombre}</h3>
-                          {rol.predefinido && (
-                            <span className="text-xs text-gray-500">Predefinido</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {rol.predefinido && (
+                              <span className="text-xs text-gray-500">Predefinido</span>
+                            )}
+                            {!rol.activo && (
+                              <span className="text-xs text-red-500 font-medium">Inactivo</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      {/* Toggle activo */}
+                      <button
+                        onClick={() => handleToggleRolActivo(rol.id)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          rol.activo
+                            ? 'text-green-600 hover:bg-green-50'
+                            : 'text-gray-400 hover:bg-gray-100'
+                        }`}
+                        title={rol.activo ? 'Desactivar rol' : 'Activar rol'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </button>
                     </div>
 
                     <p className="text-xs text-gray-500 mt-3 line-clamp-2">{rol.descripcion}</p>
@@ -430,6 +487,15 @@ export default function UsuariosPermisos() {
                           Predefinido
                         </span>
                       )}
+                      {rol.activo ? (
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                          Activo
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded text-xs font-medium">
+                          Inactivo
+                        </span>
+                      )}
                       <div className="flex-1" />
                       <button
                         onClick={() => handleEditRol(rol)}
@@ -437,6 +503,13 @@ export default function UsuariosPermisos() {
                       >
                         <Settings className="h-3.5 w-3.5" />
                         Permisos
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRol(rol)}
+                        className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1 ml-2"
+                        title="Eliminar rol"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -452,88 +525,97 @@ export default function UsuariosPermisos() {
               <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                 <Grid3X3 className="h-5 w-5 text-amber-600" />
                 <p className="text-sm text-amber-800">
-                  Matriz de permisos por rol. Los cambios se guardan automáticamente.
+                  Matriz de permisos por rol. Solo se muestran los roles activos ({rolesActivos.length} de {roles.length} roles).
                 </p>
               </div>
 
-              {/* Matrix Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-900 text-white">
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase sticky left-0 bg-gray-900 z-10">
-                        Módulo / Funcionalidad
-                      </th>
-                      {rolesMock.map((rol) => (
-                        <th key={rol.id} className="px-3 py-3 text-center text-xs font-medium uppercase min-w-[100px]">
-                          {rol.nombre}
+              {rolesActivos.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Power className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <p>No hay roles activos para mostrar en la matriz.</p>
+                  <p className="text-sm mt-1">Active al menos un rol en la pestaña "Roles".</p>
+                </div>
+              ) : (
+                /* Matrix Table */
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-900 text-white">
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase sticky left-0 bg-gray-900 z-10">
+                          Módulo / Funcionalidad
                         </th>
+                        {rolesActivos.map((rol) => (
+                          <th key={rol.id} className="px-3 py-3 text-center text-xs font-medium uppercase min-w-[100px]">
+                            {rol.nombre}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {modulosPermisos.map((modulo, mIndex) => (
+                        <>
+                          {/* Module Header */}
+                          <tr key={modulo.modulo} className="bg-gray-100">
+                            <td
+                              colSpan={rolesActivos.length + 1}
+                              className="px-4 py-2 text-sm font-semibold text-gray-700 sticky left-0 bg-gray-100"
+                            >
+                              {modulo.modulo}
+                            </td>
+                          </tr>
+                          {/* Permissions */}
+                          {modulo.permisos.map((permiso, pIndex) => {
+                            return (
+                              <tr key={permiso.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                <td className="px-4 py-2 text-sm text-gray-700 sticky left-0 bg-white">
+                                  <div className="flex items-center gap-2 pl-4">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                                    {permiso.nombre}
+                                  </div>
+                                </td>
+                                {rolesActivos.map((rol) => {
+                                  // Use stored permissions for custom roles, otherwise generate mock permissions
+                                  const permisos = rol.permisosConfig || generarPermisosRol(rol.id);
+                                  const p = permisos[permiso.id] || { ver: false, crear: false, editar: false, eliminar: false };
+                                  return (
+                                    <td key={rol.id} className="px-2 py-2 text-center">
+                                      <div className="flex items-center justify-center gap-1">
+                                        {p.ver && (
+                                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">
+                                            Ver
+                                          </span>
+                                        )}
+                                        {p.crear && (
+                                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">
+                                            Crear
+                                          </span>
+                                        )}
+                                        {p.editar && (
+                                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">
+                                            Editar
+                                          </span>
+                                        )}
+                                        {p.eliminar && (
+                                          <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-medium">
+                                            Eliminar
+                                          </span>
+                                        )}
+                                        {!p.ver && !p.crear && !p.editar && !p.eliminar && (
+                                          <span className="text-gray-300">-</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modulosPermisos.map((modulo, mIndex) => (
-                      <>
-                        {/* Module Header */}
-                        <tr key={modulo.modulo} className="bg-gray-100">
-                          <td
-                            colSpan={rolesMock.length + 1}
-                            className="px-4 py-2 text-sm font-semibold text-gray-700 sticky left-0 bg-gray-100"
-                          >
-                            {modulo.modulo}
-                          </td>
-                        </tr>
-                        {/* Permissions */}
-                        {modulo.permisos.map((permiso, pIndex) => {
-                          return (
-                            <tr key={permiso.id} className="border-b border-gray-200 hover:bg-gray-50">
-                              <td className="px-4 py-2 text-sm text-gray-700 sticky left-0 bg-white">
-                                <div className="flex items-center gap-2 pl-4">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                  {permiso.nombre}
-                                </div>
-                              </td>
-                              {rolesMock.map((rol) => {
-                                const permisos = generarPermisosRol(rol.id);
-                                const p = permisos[permiso.id] || { ver: false, crear: false, editar: false, eliminar: false };
-                                return (
-                                  <td key={rol.id} className="px-2 py-2 text-center">
-                                    <div className="flex items-center justify-center gap-1">
-                                      {p.ver && (
-                                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">
-                                          Ver
-                                        </span>
-                                      )}
-                                      {p.crear && (
-                                        <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">
-                                          Crear
-                                        </span>
-                                      )}
-                                      {p.editar && (
-                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">
-                                          Editar
-                                        </span>
-                                      )}
-                                      {p.eliminar && (
-                                        <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-medium">
-                                          Eliminar
-                                        </span>
-                                      )}
-                                      {!p.ver && !p.crear && !p.editar && !p.eliminar && (
-                                        <span className="text-gray-300">-</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -554,6 +636,96 @@ export default function UsuariosPermisos() {
 
             <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6">
+                {/* Warning: Users affected */}
+                {editingRol && getUsuariosByRol(editingRol.id).length > 0 && (
+                  <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-amber-800">
+                          Advertencia: Este rol tiene {getUsuariosByRol(editingRol.id).length} usuario(s) asignado(s)
+                        </h4>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Los cambios en los permisos afectarán a los siguientes usuarios:
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {getUsuariosByRol(editingRol.id).map(u => (
+                            <span
+                              key={u.id}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-200 rounded-full text-xs font-medium text-amber-800"
+                            >
+                              <User className="h-3 w-3" />
+                              {u.nombreCompleto}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Option to reassign users */}
+                        <div className="mt-4 pt-4 border-t border-amber-200">
+                          <button
+                            onClick={() => setShowReassignSection(!showReassignSection)}
+                            className="text-sm text-amber-800 hover:text-amber-900 font-medium flex items-center gap-1"
+                          >
+                            <UserMinus className="h-4 w-4" />
+                            {showReassignSection ? 'Ocultar opciones de reasignación' : 'Mover usuarios a otro rol antes de editar'}
+                          </button>
+
+                          {showReassignSection && (
+                            <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                              <p className="text-xs text-gray-600 mb-2">
+                                Seleccione el rol al que desea mover los usuarios:
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={reassignToRolId || ''}
+                                  onChange={(e) => setReassignToRolId(e.target.value ? Number(e.target.value) : null)}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
+                                >
+                                  <option value="">Seleccionar rol destino...</option>
+                                  {roles.filter(r => r.id !== editingRol.id && r.activo).map(r => (
+                                    <option key={r.id} value={r.id}>{r.nombre}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => {
+                                    if (reassignToRolId) {
+                                      // Move users to new role
+                                      const targetRol = roles.find(r => r.id === reassignToRolId);
+                                      setUsuarios(usuarios.map(u =>
+                                        u.rolId === editingRol.id
+                                          ? { ...u, rolId: reassignToRolId, rol: targetRol?.nombre || u.rol }
+                                          : u
+                                      ));
+                                      // Update role user counts
+                                      const usersToMove = getUsuariosByRol(editingRol.id).length;
+                                      setRoles(roles.map(r => {
+                                        if (r.id === editingRol.id) return { ...r, usuarios: 0 };
+                                        if (r.id === reassignToRolId) return { ...r, usuarios: r.usuarios + usersToMove };
+                                        return r;
+                                      }));
+                                      setReassignToRolId(null);
+                                      setShowReassignSection(false);
+                                    }
+                                  }}
+                                  disabled={!reassignToRolId}
+                                  className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1 ${
+                                    reassignToRolId
+                                      ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                >
+                                  <ArrowRight className="h-4 w-4" />
+                                  Mover
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -695,6 +867,8 @@ export default function UsuariosPermisos() {
                 onClick={() => {
                   setShowNewRolModal(false);
                   setEditingRol(null);
+                  setReassignToRolId(null);
+                  setShowReassignSection(false);
                 }}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
@@ -702,8 +876,44 @@ export default function UsuariosPermisos() {
               </button>
               <button
                 onClick={() => {
+                  if (newRol.nombre.trim()) {
+                    if (editingRol) {
+                      // Editar rol existente
+                      setRoles(roles.map(r =>
+                        r.id === editingRol.id
+                          ? {
+                              ...r,
+                              nombre: newRol.nombre,
+                              descripcion: newRol.descripcion,
+                              color: newRol.color,
+                              permisos: Object.values(newRol.permisos).filter(p => p.ver || p.crear || p.editar || p.eliminar).length,
+                              permisosConfig: { ...newRol.permisos },
+                            }
+                          : r
+                      ));
+                    } else {
+                      // Crear nuevo rol
+                      const nuevoRol: Rol = {
+                        id: Math.max(...roles.map(r => r.id)) + 1,
+                        nombre: newRol.nombre,
+                        descripcion: newRol.descripcion,
+                        color: newRol.color,
+                        icono: 'shield',
+                        usuarios: 0,
+                        permisos: Object.values(newRol.permisos).filter(p => p.ver || p.crear || p.editar || p.eliminar).length,
+                        predefinido: false,
+                        activo: true,
+                        permisosConfig: { ...newRol.permisos },
+                      };
+                      setRoles([...roles, nuevoRol]);
+                    }
+                    // Reset form
+                    setNewRol({ nombre: '', descripcion: '', color: '#3182ce', permisos: {} });
+                  }
                   setShowNewRolModal(false);
                   setEditingRol(null);
+                  setReassignToRolId(null);
+                  setShowReassignSection(false);
                 }}
                 className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
               >
@@ -762,7 +972,7 @@ export default function UsuariosPermisos() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-accent">
-                  {rolesMock.map((rol) => (
+                  {roles.map((rol) => (
                     <option key={rol.id} value={rol.id}>{rol.nombre}</option>
                   ))}
                 </select>
@@ -790,6 +1000,79 @@ export default function UsuariosPermisos() {
                 className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
               >
                 Crear Usuario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación Eliminar Rol */}
+      {deleteConfirmRol && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Eliminar Rol</h3>
+                <p className="text-sm text-gray-500">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+
+            <p className="text-gray-700 mb-4">
+              ¿Está seguro que desea eliminar el rol <span className="font-semibold">"{deleteConfirmRol.nombre}"</span>?
+            </p>
+
+            {deleteConfirmRol.predefinido && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <p className="text-sm text-red-800">
+                  <strong>¡Atención!</strong> Este es un rol predefinido del sistema.
+                  Eliminarlo puede afectar el funcionamiento normal de la aplicación.
+                </p>
+              </div>
+            )}
+
+            {getUsuariosByRol(deleteConfirmRol.id).length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                <p className="text-sm text-amber-800 mb-2">
+                  <strong>Advertencia:</strong> Este rol tiene {getUsuariosByRol(deleteConfirmRol.id).length} usuario(s) asignado(s):
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {getUsuariosByRol(deleteConfirmRol.id).map(u => (
+                    <span
+                      key={u.id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-amber-200 rounded text-xs text-amber-800"
+                    >
+                      <User className="h-3 w-3" />
+                      {u.nombreCompleto}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-sm text-amber-800 mt-3">
+                  Debe reasignar estos usuarios a otro rol antes de eliminar.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setDeleteConfirmRol(null)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteRol}
+                disabled={getUsuariosByRol(deleteConfirmRol.id).length > 0}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                  getUsuariosByRol(deleteConfirmRol.id).length > 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar Rol
               </button>
             </div>
           </div>

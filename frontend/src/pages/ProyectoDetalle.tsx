@@ -72,6 +72,57 @@ export default function ProyectoDetalle() {
     descripcion: '',
   });
 
+  // Mock data for demo when API fails
+  const getMockProyecto = () => ({
+    id: id,
+    codigo_proyecto: 'PRY-2026-001',
+    nombre: 'Modernización ERP SAP S/4HANA',
+    descripcion: 'Proyecto de modernización del sistema ERP corporativo migrando a SAP S/4HANA Cloud, incluyendo rediseño de procesos financieros, logísticos y de recursos humanos.',
+    estado: 'en_ejecucion',
+    semaforo_salud: 'verde',
+    avance_porcentaje: 65,
+    presupuesto_asignado: 850000000,
+    año_plan: 2026,
+    area_demandante_nombre: 'Tecnología de la Información',
+    fecha_activacion: '2025-03-01',
+    fases: [
+      { id: 1, nombre: 'Planificación', estado: 'completada', avance_porcentaje: 100 },
+      { id: 2, nombre: 'Análisis y Diseño', estado: 'completada', avance_porcentaje: 100 },
+      { id: 3, nombre: 'Construcción', estado: 'en_progreso', avance_porcentaje: 60 },
+      { id: 4, nombre: 'Pruebas', estado: 'pendiente', avance_porcentaje: 0 },
+      { id: 5, nombre: 'Transición', estado: 'pendiente', avance_porcentaje: 0 },
+      { id: 6, nombre: 'Go Live', estado: 'pendiente', avance_porcentaje: 0 },
+    ],
+  });
+
+  const getMockCurvaS = () => ({
+    capex_aprobado: 850000000,
+    total_ejecutado: 510000000,
+    variacion_costo_porcentaje: 5.2,
+    datos: [
+      { periodo: 'Mar-25', planificado_acumulado: 50000000, ejecutado_acumulado: 45000000 },
+      { periodo: 'Jun-25', planificado_acumulado: 150000000, ejecutado_acumulado: 140000000 },
+      { periodo: 'Sep-25', planificado_acumulado: 300000000, ejecutado_acumulado: 310000000 },
+      { periodo: 'Dic-25', planificado_acumulado: 500000000, ejecutado_acumulado: 510000000 },
+      { periodo: 'Mar-26', planificado_acumulado: 650000000, ejecutado_acumulado: null },
+      { periodo: 'Jun-26', planificado_acumulado: 850000000, ejecutado_acumulado: null },
+    ],
+  });
+
+  const getMockRiesgos = () => [
+    { id: 1, descripcion: 'Retraso en entrega de módulo financiero por proveedor', probabilidad: 'medio', impacto: 'alto', estado: 'abierto', mitigacion: 'Seguimiento semanal con proveedor y plan de contingencia alternativo' },
+    { id: 2, descripcion: 'Resistencia al cambio por usuarios finales', probabilidad: 'alto', impacto: 'medio', estado: 'abierto', mitigacion: 'Plan de gestión del cambio y capacitaciones tempranas' },
+  ];
+
+  const getMockIssues = () => [
+    { id: 1, titulo: 'Error en migración de datos históricos', descripcion: 'Se detectaron inconsistencias en la migración de transacciones del año 2023', severidad: 'alta', estado: 'abierto' },
+  ];
+
+  const getMockBitacora = () => [
+    { id: 1, fecha: '2026-01-15', tipo: 'decision', descripcion: 'Se aprobó extensión de fase de construcción por 2 semanas', usuario_nombre: 'Juan Pérez' },
+    { id: 2, fecha: '2026-01-10', tipo: 'nota', descripcion: 'Reunión de seguimiento con stakeholders - avance satisfactorio', usuario_nombre: 'María García' },
+  ];
+
   useEffect(() => {
     if (id) loadProyecto();
   }, [id]);
@@ -79,15 +130,27 @@ export default function ProyectoDetalle() {
   const loadProyecto = async () => {
     setIsLoading(true);
     try {
-      const data = await proyectosService.getById(parseInt(id!));
+      const numericId = parseInt(id!);
+      if (isNaN(numericId)) {
+        // Use mock data for non-numeric IDs (demo mode)
+        setProyecto(getMockProyecto());
+        setCurvaS(getMockCurvaS());
+        setRiesgos(getMockRiesgos());
+        setIssues(getMockIssues());
+        setBitacora(getMockBitacora());
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await proyectosService.getById(numericId);
       setProyecto(data);
 
       // Cargar datos adicionales
       const [curva, riesgosData, issuesData, bitacoraData] = await Promise.all([
-        presupuestoService.getCurvaS(parseInt(id!)).catch(() => null),
-        proyectosService.getRiesgos(parseInt(id!)).catch(() => []),
-        proyectosService.getIssues(parseInt(id!)).catch(() => []),
-        proyectosService.getBitacora(parseInt(id!)).catch(() => []),
+        presupuestoService.getCurvaS(numericId).catch(() => getMockCurvaS()),
+        proyectosService.getRiesgos(numericId).catch(() => getMockRiesgos()),
+        proyectosService.getIssues(numericId).catch(() => getMockIssues()),
+        proyectosService.getBitacora(numericId).catch(() => getMockBitacora()),
       ]);
 
       setCurvaS(curva);
@@ -96,6 +159,12 @@ export default function ProyectoDetalle() {
       setBitacora(bitacoraData);
     } catch (error) {
       console.error('Error loading proyecto:', error);
+      // Use mock data on error
+      setProyecto(getMockProyecto());
+      setCurvaS(getMockCurvaS());
+      setRiesgos(getMockRiesgos());
+      setIssues(getMockIssues());
+      setBitacora(getMockBitacora());
     } finally {
       setIsLoading(false);
     }

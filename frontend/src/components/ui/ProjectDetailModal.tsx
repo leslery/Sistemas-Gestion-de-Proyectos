@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   CheckCircle,
@@ -15,6 +16,7 @@ import {
   Activity,
   FolderKanban,
   Building2,
+  ExternalLink,
 } from 'lucide-react';
 import { Tabs, TabList, Tab, TabPanel } from './Tabs';
 import clsx from 'clsx';
@@ -164,8 +166,14 @@ const getActivityIcon = (type: string) => {
 
 export default function ProjectDetailModal({ project, isOpen, onClose }: ProjectDetailModalProps) {
   const [activeTab, setActiveTab] = useState('etapas');
+  const navigate = useNavigate();
 
   if (!isOpen || !project) return null;
+
+  const handleViewProject = () => {
+    onClose();
+    navigate(`/proyectos/${project.id}`);
+  };
 
   // Use mock data for demo (in production, this would come from API)
   const detail = getMockProjectDetail(project.id);
@@ -581,8 +589,11 @@ export default function ProjectDetailModal({ project, isOpen, onClose }: Project
           >
             Cerrar
           </button>
-          <button className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+          <button
+            onClick={handleViewProject}
+            className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
             Ver Proyecto
           </button>
         </div>

@@ -28,6 +28,49 @@ export default function DashboardEjecutivo() {
 
   useEffect(() => {
     const loadData = async () => {
+      // Modo demo
+      const token = localStorage.getItem('token');
+      if (token?.startsWith('dev-token-')) {
+        const mockData = {
+          kpis: {
+            total_proyectos: 12,
+            presupuesto: {
+              capex_aprobado: 2500000000,
+              capex_comprometido: 1800000000,
+              capex_ejecutado: 1200000000
+            },
+            semaforo: { verde: 6, amarillo: 4, rojo: 2 }
+          },
+          funnel: {
+            funnel: {
+              registradas: 45,
+              evaluacion: 28,
+              aprobadas: 18,
+              ejecucion: 12,
+              cerradas: 8
+            }
+          },
+          proyectos_criticos: [
+            { id: 1, codigo: 'PRY-001', nombre: 'Modernización ERP', semaforo: 'rojo', avance: 45, desviacion_presupuesto: 15 },
+            { id: 2, codigo: 'PRY-003', nombre: 'Sistema CRM', semaforo: 'amarillo', avance: 62, desviacion_presupuesto: 8 }
+          ],
+          banco_reserva: { total_proyectos: 5 },
+          ejecucion: {
+            datos: [
+              { mes: 1, planificado_acumulado: 200000000, ejecutado_acumulado: 180000000 },
+              { mes: 2, planificado_acumulado: 400000000, ejecutado_acumulado: 350000000 },
+              { mes: 3, planificado_acumulado: 650000000, ejecutado_acumulado: 580000000 },
+              { mes: 4, planificado_acumulado: 900000000, ejecutado_acumulado: 820000000 },
+              { mes: 5, planificado_acumulado: 1150000000, ejecutado_acumulado: 1050000000 },
+              { mes: 6, planificado_acumulado: 1400000000, ejecutado_acumulado: 1200000000 }
+            ]
+          }
+        };
+        setData(mockData);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const result = await dashboardService.getEjecutivo(selectedYear);
         setData(result);

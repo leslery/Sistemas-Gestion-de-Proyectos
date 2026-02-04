@@ -36,6 +36,7 @@ export default function NuevaIniciativa() {
     register,
     handleSubmit,
     watch,
+    trigger,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
@@ -56,6 +57,19 @@ export default function NuevaIniciativa() {
       setAreas(data);
     } catch (error) {
       console.error('Error loading areas:', error);
+      // Datos demo cuando no hay backend disponible
+      setAreas([
+        { id: 1, nombre: 'Tecnología de la Información' },
+        { id: 2, nombre: 'Recursos Humanos' },
+        { id: 3, nombre: 'Finanzas y Contabilidad' },
+        { id: 4, nombre: 'Operaciones' },
+        { id: 5, nombre: 'Comercial y Ventas' },
+        { id: 6, nombre: 'Marketing' },
+        { id: 7, nombre: 'Legal y Cumplimiento' },
+        { id: 8, nombre: 'Administración General' },
+        { id: 9, nombre: 'Logística y Supply Chain' },
+        { id: 10, nombre: 'Atención al Cliente' },
+      ]);
     }
   };
 
@@ -78,8 +92,26 @@ export default function NuevaIniciativa() {
     }
   };
 
-  const nextStep = () => {
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  const nextStep = async () => {
+    // Validar campos del paso actual antes de avanzar
+    let fieldsToValidate: (keyof FormData)[] = [];
+
+    switch (currentStep) {
+      case 1:
+        fieldsToValidate = ['titulo', 'descripcion', 'area_demandante_id'];
+        break;
+      case 2:
+        fieldsToValidate = ['justificacion', 'beneficios_esperados'];
+        break;
+      case 3:
+        fieldsToValidate = ['monto_estimado'];
+        break;
+    }
+
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid && currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+    }
   };
 
   const prevStep = () => {
