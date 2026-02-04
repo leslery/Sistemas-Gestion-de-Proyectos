@@ -9,9 +9,6 @@ import {
   ExternalLink,
   ChevronRight,
   Lightbulb,
-  FolderKanban,
-  BarChart3,
-  Settings,
   Keyboard,
 } from 'lucide-react';
 import clsx from 'clsx';

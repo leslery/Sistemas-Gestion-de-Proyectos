@@ -197,7 +197,6 @@ export default function Proyectos() {
               options={estadoOptions}
               value={filters.estado}
               onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
-              placeholder="Estado"
             />
           </div>
           <div className="w-48">
@@ -205,7 +204,6 @@ export default function Proyectos() {
               options={semaforoOptions}
               value={filters.semaforo}
               onChange={(e) => setFilters({ ...filters, semaforo: e.target.value })}
-              placeholder="Semáforo"
             />
           </div>
           <Button

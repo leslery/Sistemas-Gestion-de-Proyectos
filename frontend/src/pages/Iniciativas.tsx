@@ -153,7 +153,6 @@ export default function Iniciativas() {
               options={estadoOptions}
               value={filters.estado}
               onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
-              placeholder="Estado"
             />
           </div>
           <div className="w-48">
@@ -163,7 +162,6 @@ export default function Iniciativas() {
               onChange={(e) =>
                 setFilters({ ...filters, prioridad: e.target.value })
               }
-              placeholder="Prioridad"
             />
           </div>
           <Button variant="secondary" onClick={handleSearch}>

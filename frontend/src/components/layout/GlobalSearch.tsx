@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -204,8 +204,6 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                 {orderedTypes.map((type) => {
                   const typeResults = groupedResults[type];
                   if (!typeResults?.length) return null;
-
-                  const TypeIcon = typeIcons[type];
 
                   return (
                     <div key={type} className="mb-2">

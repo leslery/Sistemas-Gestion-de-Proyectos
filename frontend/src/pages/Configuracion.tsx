@@ -240,9 +240,9 @@ export default function Configuracion() {
                     {user?.nombre} {user?.apellido}
                   </h3>
                   <p className="text-gray-500">{user?.email}</p>
-                  <Badge className="mt-2">
+                  <span className="inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
                     {user?.rol && roleLabels[user.rol]}
-                  </Badge>
+                  </span>
                 </div>
               </div>
               <div className="pt-4 border-t border-gray-200 space-y-3">

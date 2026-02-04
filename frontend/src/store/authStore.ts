@@ -34,9 +34,9 @@ export const useAuthStore = create<AuthState>()(
           const mockUser: Usuario = {
             id: 1,
             email: email,
-            nombre_completo: email === 'admin@empresa.com' ? 'Administrador Sistema' : 'Usuario Demo',
+            nombre: email === 'admin@empresa.com' ? 'Administrador' : 'Usuario',
+            apellido: email === 'admin@empresa.com' ? 'Sistema' : 'Demo',
             rol: email === 'admin@empresa.com' ? RolUsuario.ADMINISTRADOR : RolUsuario.JEFE_TD,
-            gerencia_id: 1,
             activo: true,
             created_at: new Date().toISOString(),
           };
