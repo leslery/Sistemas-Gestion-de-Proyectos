@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGI - Sistema de Gestión de Iniciativas y Proyectos | CGE Chile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --primary-light: #2c5282;
+            --primary-dark: #0f2442;
+            --accent-color: #3182ce;
+            --accent-light: #63b3ed;
+            --success-color: #38a169;
+            --warning-color: #d69e2e;
+            --danger-color: #e53e3e;
+            --info-color: #00b5d8;
+            --gray-50: #f7fafc;
+            --gray-100: #edf2f7;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e0;
+            --gray-400: #a0aec0;
+            --gray-500: #718096;
+            --gray-600: #4a5568;
+            --gray-700: #2d3748;
+            --gray-800: #1a202c;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 60px;
+            --header-height: 60px;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--gray-100);
+            color: var(--gray-700);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background var(--transition-speed);
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .logo-text {
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        .logo-text span {
+            font-weight: 300;
+            font-size: 0.9rem;
+            display: block;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-search {
+            position: relative;
+        }
+
+        .header-search input {
+            padding: 10px 15px 10px 40px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            width: 250px;
+            font-size: 0.9rem;
+            transition: all var(--transition-speed);
+        }
+
+        .header-search input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .header-search input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.25);
+            width: 300px;
+        }
+
+        .header-search i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.7);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: background var(--transition-speed);
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .header-btn .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 15px 5px 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background var(--transition-speed);
+        }
+
+        .user-profile:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-info {
+            color: white;
+        }
+
+        .user-info .name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .user-info .role {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width var(--transition-speed);
+            z-index: 999;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+
+        /* Sidebar Search */
+        .sidebar-search {
+            padding: 15px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all var(--transition-speed);
+        }
+
+        .sidebar-search input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .sidebar-search {
+            position: relative;
+        }
+
+        .sidebar-search i {
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        .sidebar.collapsed .sidebar-search {
+            padding: 10px;
+        }
+
+        .sidebar.collapsed .sidebar-search input {
+            padding: 10px;
+            text-indent: -9999px;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            padding: 10px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 5px;
+        }
+
+        .nav-section-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            border-left: 3px solid transparent;
+            user-select: none;
+        }
+
+        .nav-section-header:hover {
+            background: var(--gray-50);
+        }
+
+        .nav-section-header.active {
+            background: linear-gradient(90deg, rgba(49, 130, 206, 0.1) 0%, transparent 100%);
+            border-left-color: var(--accent-color);
+        }
+
+        .nav-section-header .icon {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .nav-section-header .text {
+            flex: 1;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-section-header .arrow {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+            transition: transform var(--transition-speed);
+        }
+
+        .nav-section-header.expanded .arrow {
+            transform: rotate(90deg);
+        }
+
+        .sidebar.collapsed .nav-section-header .text,
+        .sidebar.collapsed .nav-section-header .arrow {
+            display: none;
+        }
+
+        /* Section Colors */
+        .nav-section.dashboard .icon { background: rgba(0, 181, 216, 0.15); color: var(--info-color); }
+        .nav-section.activacion .icon { background: rgba(49, 130, 206, 0.15); color: var(--accent-color); }
+        .nav-section.implementacion .icon { background: rgba(56, 161, 105, 0.15); color: var(--success-color); }
+        .nav-section.seguimiento .icon { background: rgba(214, 158, 46, 0.15); color: var(--warning-color); }
+        .nav-section.historia .icon { background: rgba(113, 128, 150, 0.15); color: var(--gray-500); }
+        .nav-section.compras .icon { background: rgba(159, 122, 234, 0.15); color: #9f7aea; }
+        .nav-section.configuracion .icon { background: rgba(237, 100, 166, 0.15); color: #ed64a6; }
+
+        /* Submenu */
+        .nav-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            background: var(--gray-50);
+        }
+
+        .nav-section.expanded .nav-submenu {
+            max-height: 1000px;
+        }
+
+        .nav-submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px 10px 67px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            font-size: 0.9rem;
+            color: var(--gray-600);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-submenu-item:hover {
+            background: var(--gray-100);
+            color: var(--accent-color);
+        }
+
+        .nav-submenu-item.active {
+            background: var(--gray-100);
+            color: var(--accent-color);
+            border-left-color: var(--accent-color);
+            font-weight: 500;
+        }
+
+        .nav-submenu-item i {
+            margin-right: 10px;
+            font-size: 0.8rem;
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Status badges in submenu */
+        .nav-submenu-item .status-badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-badge.count {
+            background: var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .status-badge.new {
+            background: var(--accent-light);
+            color: white;
+        }
+
+        .sidebar.collapsed .nav-submenu {
+            display: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 25px;
+            min-height: calc(100vh - var(--header-height));
+            transition: margin-left var(--transition-speed);
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed);
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--gray-500);
+        }
+
+        .breadcrumb a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb i {
+            font-size: 0.7rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .page-title span {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: var(--gray-500);
+            margin-top: 5px;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all var(--transition-speed);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-icon.blue { background: rgba(49, 130, 206, 0.15); color: var(--accent-color); }
+        .stat-icon.green { background: rgba(56, 161, 105, 0.15); color: var(--success-color); }
+        .stat-icon.yellow { background: rgba(214, 158, 46, 0.15); color: var(--warning-color); }
+        .stat-icon.red { background: rgba(229, 62, 62, 0.15); color: var(--danger-color); }
+        .stat-icon.purple { background: rgba(159, 122, 234, 0.15); color: #9f7aea; }
+        .stat-icon.cyan { background: rgba(0, 181, 216, 0.15); color: var(--info-color); }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            line-height: 1;
+        }
+
+        .stat-info p {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            margin-top: 5px;
+        }
+
+        .stat-trend {
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .stat-trend .value {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .stat-trend .value.up { color: var(--success-color); }
+        .stat-trend .value.down { color: var(--danger-color); }
+
+        .stat-trend .label {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent-color);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .card-btn {
+            background: var(--gray-100);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--gray-500);
+            transition: all var(--transition-speed);
+        }
+
+        .card-btn:hover {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Project List */
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .project-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--gray-50);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            border-left: 4px solid transparent;
+        }
+
+        .project-item:hover {
+            background: var(--gray-100);
+            border-left-color: var(--accent-color);
+        }
+
+        .project-item .priority {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+
+        .priority.p1 { background: var(--danger-color); }
+        .priority.p2 { background: #ed8936; }
+        .priority.p3 { background: var(--warning-color); }
+        .priority.p4 { background: var(--success-color); }
+        .priority.p5 { background: var(--gray-400); }
+
+        .project-item .info {
+            flex: 1;
+        }
+
+        .project-item .title {
+            font-weight: 500;
+            color: var(--gray-800);
+            margin-bottom: 3px;
+        }
+
+        .project-item .meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        .project-item .status {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status.en-ejecucion { background: rgba(56, 161, 105, 0.15); color: var(--success-color); }
+        .status.en-revision { background: rgba(214, 158, 46, 0.15); color: var(--warning-color); }
+        .status.pendiente { background: rgba(49, 130, 206, 0.15); color: var(--accent-color); }
+        .status.en-riesgo { background: rgba(229, 62, 62, 0.15); color: var(--danger-color); }
+
+        /* Phase Progress */
+        .phase-progress {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .phase-step {
+            flex: 1;
+            text-align: center;
+        }
+
+        .phase-step .bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--gray-200);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .phase-step .bar .fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .phase-step.completed .bar .fill { background: var(--success-color); width: 100%; }
+        .phase-step.in-progress .bar .fill { background: var(--accent-color); width: 60%; }
+        .phase-step.pending .bar .fill { background: var(--gray-300); width: 0; }
+
+        .phase-step .label {
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            white-space: nowrap;
+        }
+
+        .phase-step.completed .label { color: var(--success-color); }
+        .phase-step.in-progress .label { color: var(--accent-color); font-weight: 500; }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .quick-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: var(--gray-50);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            text-align: center;
+        }
+
+        .quick-action:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .quick-action i {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .quick-action:hover i {
+            color: white;
+        }
+
+        .quick-action span {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .data-table th {
+            background: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:hover td {
+            background: var(--gray-50);
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: var(--gray-800);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all var(--transition-speed);
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { border-left: 4px solid var(--success-color); }
+        .toast.error { border-left: 4px solid var(--danger-color); }
+        .toast.warning { border-left: 4px solid var(--warning-color); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--gray-200);
+            margin-top: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .header-search {
+                display: none;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo">
+                <div class="logo-icon">SGI</div>
+                <div class="logo-text">
+                    Sistema de Gestión
+                    <span>Iniciativas y Proyectos</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Buscar proyectos, iniciativas...">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" title="Notificaciones">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">5</span>
+                </button>
+                <button class="header-btn" title="Ayuda">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar">LT</div>
+                <div class="user-info">
+                    <div class="name">Luis Tolorzar</div>
+                    <div class="role">PMO Manager</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-search">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Buscar..." id="sidebarSearch">
+        </div>
+
+        <nav class="nav-menu">
+            <!-- 0. Dashboard -->
+            <div class="nav-section dashboard expanded">
+                <div class="nav-section-header active expanded" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-th-large"></i></div>
+                    <span class="text">Dashboard</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item active">
+                        <i class="fas fa-chart-pie"></i>Vista Ejecutiva
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-briefcase"></i>Portafolio de Proyectos
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-calendar-alt"></i>Planificación Anual
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-dollar-sign"></i>Vista Financiera
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-sitemap"></i>Gobernanza
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-file-alt"></i>Reportes y Exportación
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Activación y Aprobación -->
+            <div class="nav-section activacion">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-rocket"></i></div>
+                    <span class="text">Activación y Aprobación</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-flag"></i>Planificación Estratégica
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-plus-circle"></i>Ingreso de Requerimientos
+                        <span class="status-badge new">Nuevo</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-file-signature"></i>Informes de Factibilidad
+                        <span class="status-badge count">12</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-users"></i>Comité de Expertos
+                        <span class="status-badge count">8</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-university"></i>Banco de Reserva
+                        <span class="status-badge count">45</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-calendar-check"></i>Plan Anual Digitalización
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-check-circle"></i>Activación Individual
+                        <span class="status-badge count">3</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-exclamation-triangle"></i>Ingreso Extraordinario
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Implementación -->
+            <div class="nav-section implementacion">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-cogs"></i></div>
+                    <span class="text">Implementación</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-play-circle"></i>Planificación / Kick Off
+                        <span class="status-badge count">5</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-drafting-compass"></i>Análisis y Diseño
+                        <span class="status-badge count">8</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-hammer"></i>Construcción
+                        <span class="status-badge count">12</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-vial"></i>Pruebas
+                        <span class="status-badge count">4</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-exchange-alt"></i>Transición
+                        <span class="status-badge count">2</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-flag-checkered"></i>Go Live y Soporte
+                        <span class="status-badge count">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Seguimiento y Control -->
+            <div class="nav-section seguimiento">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-chart-line"></i></div>
+                    <span class="text">Seguimiento y Control</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-coins"></i>Control Presupuestario
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-tasks"></i>Control de Planificación
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-exclamation-circle"></i>Gestión de Riesgos
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-gavel"></i>Control de Gobernanza
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-folder-open"></i>Gestión Documental
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-clipboard-check"></i>Evaluación y Métricas
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Historia -->
+            <div class="nav-section historia">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-history"></i></div>
+                    <span class="text">Historia</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-hourglass-half"></i>En Proceso de Cierre
+                        <span class="status-badge count">4</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-check-double"></i>Proyectos Cerrados
+                        <span class="status-badge count">127</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-times-circle"></i>Rechazados
+                        <span class="status-badge count">18</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-pause-circle"></i>Suspendidos
+                        <span class="status-badge count">6</span>
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-trash-alt"></i>Eliminados del Banco
+                        <span class="status-badge count">23</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Gestión de Compras -->
+            <div class="nav-section compras">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+                    <span class="text">Gestión de Compras</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-file-invoice"></i>Solicitudes Sin Contrato Marco
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-balance-scale"></i>Evaluación de Proveedores
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-file-contract"></i>Gestión de Contratos
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-receipt"></i>Seguimiento de Órdenes
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Configuración -->
+            <div class="nav-section configuracion">
+                <div class="nav-section-header" onclick="toggleSection(this)">
+                    <div class="icon"><i class="fas fa-sliders-h"></i></div>
+                    <span class="text">Configuración</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-book"></i>Catálogos Maestros
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-user-cog"></i>Usuarios y Permisos
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-project-diagram"></i>Flujos de Trabajo
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-file-code"></i>Plantillas
+                    </div>
+                    <div class="nav-submenu-item">
+                        <i class="fas fa-plug"></i>Integraciones
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="#">Inicio</a>
+            <i class="fas fa-chevron-right"></i>
+            <span>Dashboard</span>
+            <i class="fas fa-chevron-right"></i>
+            <span>Vista Ejecutiva</span>
+        </div>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                Vista Ejecutiva
+                <span>Resumen del portafolio de proyectos e iniciativas</span>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary">
+                    <i class="fas fa-download"></i>Exportar
+                </button>
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus"></i>Nueva Iniciativa
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>34</h3>
+                    <p>Proyectos Activos</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value up"><i class="fas fa-arrow-up"></i> 12%</div>
+                    <div class="label">vs. mes anterior</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>127</h3>
+                    <p>Cerrados este año</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value up"><i class="fas fa-arrow-up"></i> 8%</div>
+                    <div class="label">vs. año anterior</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-university"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>45</h3>
+                    <p>En Banco de Reserva</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value down"><i class="fas fa-arrow-down"></i> 5%</div>
+                    <div class="label">vs. mes anterior</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>6</h3>
+                    <p>En Riesgo</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value up"><i class="fas fa-arrow-up"></i> 2</div>
+                    <div class="label">nuevos esta semana</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>$2.4M</h3>
+                    <p>Presupuesto Activo</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value">78%</div>
+                    <div class="label">ejecutado</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon cyan">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>89%</h3>
+                    <p>Cumplimiento Plan</p>
+                </div>
+                <div class="stat-trend">
+                    <div class="value up"><i class="fas fa-arrow-up"></i> 3%</div>
+                    <div class="label">vs. mes anterior</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="cards-grid">
+            <!-- Proyectos en Ejecución -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-play-circle"></i>Proyectos en Ejecución
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-btn" title="Filtrar"><i class="fas fa-filter"></i></button>
+                        <button class="card-btn" title="Ver todo"><i class="fas fa-external-link-alt"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="project-list">
+                        <div class="project-item">
+                            <div class="priority p1"></div>
+                            <div class="info">
+                                <div class="title">Modernización ERP SAP S/4HANA</div>
+                                <div class="meta">CAPEX Intangible · $850K · Fase: Construcción</div>
+                            </div>
+                            <span class="status en-ejecucion">En Ejecución</span>
+                        </div>
+                        <div class="project-item">
+                            <div class="priority p2"></div>
+                            <div class="info">
+                                <div class="title">Automatización Procesos Comerciales</div>
+                                <div class="meta">CAPEX Intangible · $320K · Fase: Análisis</div>
+                            </div>
+                            <span class="status en-revision">En Revisión</span>
+                        </div>
+                        <div class="project-item">
+                            <div class="priority p1"></div>
+                            <div class="info">
+                                <div class="title">Ciberseguridad - Zero Trust</div>
+                                <div class="meta">CAPEX Tangible · $450K · Fase: Pruebas</div>
+                            </div>
+                            <span class="status en-riesgo">En Riesgo</span>
+                        </div>
+                        <div class="project-item">
+                            <div class="priority p3"></div>
+                            <div class="info">
+                                <div class="title">Portal de Autoatención Clientes</div>
+                                <div class="meta">OPEX · $180K · Fase: Transición</div>
+                            </div>
+                            <span class="status en-ejecucion">En Ejecución</span>
+                        </div>
+                    </div>
+
+                    <div class="phase-progress">
+                        <div class="phase-step completed">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Planificación</div>
+                        </div>
+                        <div class="phase-step completed">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Análisis</div>
+                        </div>
+                        <div class="phase-step in-progress">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Construcción</div>
+                        </div>
+                        <div class="phase-step pending">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Pruebas</div>
+                        </div>
+                        <div class="phase-step pending">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Transición</div>
+                        </div>
+                        <div class="phase-step pending">
+                            <div class="bar"><div class="fill"></div></div>
+                            <div class="label">Go Live</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-bolt"></i>Acciones Rápidas
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <div class="quick-action">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Nueva Iniciativa</span>
+                        </div>
+                        <div class="quick-action">
+                            <i class="fas fa-file-signature"></i>
+                            <span>Informe Factibilidad</span>
+                        </div>
+                        <div class="quick-action">
+                            <i class="fas fa-users"></i>
+                            <span>Comité Expertos</span>
+                        </div>
+                        <div class="quick-action">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Agendar Sesión</span>
+                        </div>
+                        <div class="quick-action">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Ver Reportes</span>
+                        </div>
+                        <div class="quick-action">
+                            <i class="fas fa-bell"></i>
+                            <span>Alertas</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pendientes de Aprobación -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-clock"></i>Pendientes de Aprobación
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-btn" title="Ver todo"><i class="fas fa-external-link-alt"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="project-list">
+                        <div class="project-item">
+                            <div class="priority p2"></div>
+                            <div class="info">
+                                <div class="title">Migración Data Center</div>
+                                <div class="meta">Esperando: Comité de Expertos · 3 días</div>
+                            </div>
+                            <span class="status pendiente">Evaluación</span>
+                        </div>
+                        <div class="project-item">
+                            <div class="priority p3"></div>
+                            <div class="info">
+                                <div class="title">App Móvil Técnicos Terreno</div>
+                                <div class="meta">Esperando: Informe Factibilidad · 5 días</div>
+                            </div>
+                            <span class="status pendiente">Factibilidad</span>
+                        </div>
+                        <div class="project-item">
+                            <div class="priority p1"></div>
+                            <div class="info">
+                                <div class="title">Integración SCADA-ERP</div>
+                                <div class="meta">Esperando: Activación Plan Anual · 1 día</div>
+                            </div>
+                            <span class="status pendiente">Activación</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Próximas Sesiones Comité -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-calendar"></i>Próximas Sesiones
+                    </div>
+                    <div class="card-actions">
+                        <button class="card-btn" title="Ver calendario"><i class="fas fa-calendar-alt"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Proyectos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>05 Feb 2026</strong><br><small>10:00 AM</small></td>
+                                <td>Comité Expertos</td>
+                                <td><span class="status-badge count">4</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>12 Feb 2026</strong><br><small>15:00 PM</small></td>
+                                <td>Comité Inversiones</td>
+                                <td><span class="status-badge count">6</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>19 Feb 2026</strong><br><small>09:00 AM</small></td>
+                                <td>Review Gobernanza</td>
+                                <td><span class="status-badge count">8</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Sistema de Gestión de Iniciativas y Proyectos v1.0 · CGE Chile · 2026</p>
+            <p>Desarrollado conforme a PE.06515.CL.Dx y PE.CGEDx</p>
+        </footer>
+    </main>
+
+    <!-- Toast Notification (hidden by default) -->
+    <div class="toast success" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Acción completada exitosamente</span>
+    </div>
+
+    <script>
+        // Toggle sidebar
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        });
+
+        // Toggle navigation sections (accordion)
+        function toggleSection(header) {
+            const section = header.parentElement;
+            const wasExpanded = section.classList.contains('expanded');
+
+            // Close all sections
+            document.querySelectorAll('.nav-section').forEach(s => {
+                s.classList.remove('expanded');
+                s.querySelector('.nav-section-header').classList.remove('expanded', 'active');
+            });
+
+            // Open clicked section if it wasn't already open
+            if (!wasExpanded) {
+                section.classList.add('expanded');
+                header.classList.add('expanded', 'active');
+            }
+        }
+
+        // Submenu item click
+        document.querySelectorAll('.nav-submenu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-submenu-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Sidebar search filter
+        const sidebarSearch = document.getElementById('sidebarSearch');
+        sidebarSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.nav-submenu-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+
+            // Auto-expand sections with matching items
+            if (query) {
+                document.querySelectorAll('.nav-section').forEach(section => {
+                    const hasVisibleItems = section.querySelectorAll('.nav-submenu-item[style="display: flex;"]').length > 0 ||
+                                           section.querySelectorAll('.nav-submenu-item:not([style])').length > 0;
+                    if (hasVisibleItems) {
+                        section.classList.add('expanded');
+                        section.querySelector('.nav-section-header').classList.add('expanded');
+                    }
+                });
+            }
+        });
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.querySelector('span').textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Mobile menu toggle
+        if (window.innerWidth <= 1024) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('mobile-open');
+            });
+        }
+
+        // Quick action clicks
+        document.querySelectorAll('.quick-action').forEach(action => {
+            action.addEventListener('click', () => {
+                const actionName = action.querySelector('span').textContent;
+                showToast(`Abriendo: ${actionName}`);
+            });
+        });
+
+        // Project item clicks
+        document.querySelectorAll('.project-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const title = item.querySelector('.title').textContent;
+                showToast(`Abriendo proyecto: ${title}`);
+            });
+        });
+    </script>
+</body>
+</html>
