@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
 import { ToastProvider, GlobalToast } from './components/ui/Toast';
+import { ProjectDetailProvider } from './contexts/ProjectDetailContext';
 
 // Dashboard Pages
 import Dashboard from './pages/Dashboard';
@@ -93,6 +94,7 @@ function App() {
 
   return (
     <ToastProvider>
+    <ProjectDetailProvider>
     <Routes>
       <Route path="/login" element={<Login />} />
 
@@ -166,6 +168,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ProjectDetailProvider>
     <GlobalToast />
     </ToastProvider>
   );

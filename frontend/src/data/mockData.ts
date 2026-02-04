@@ -31,6 +31,7 @@ export interface QuickAction {
   icon: string;
   label: string;
   action: string;
+  route?: string;
 }
 
 export interface UpcomingSession {
@@ -213,37 +214,43 @@ export const quickActions: QuickAction[] = [
     id: 'action-1',
     icon: 'fa-plus-circle',
     label: 'Nueva Iniciativa',
-    action: 'new-initiative'
+    action: 'new-initiative',
+    route: '/iniciativas/nueva'
   },
   {
     id: 'action-2',
     icon: 'fa-file-signature',
     label: 'Informe Factibilidad',
-    action: 'feasibility-report'
+    action: 'feasibility-report',
+    route: '/iniciativas'
   },
   {
     id: 'action-3',
     icon: 'fa-users',
     label: 'Comité Expertos',
-    action: 'experts-committee'
+    action: 'experts-committee',
+    route: '/iniciativas'
   },
   {
     id: 'action-4',
     icon: 'fa-calendar-plus',
     label: 'Agendar Sesión',
-    action: 'schedule-session'
+    action: 'schedule-session',
+    route: '/proyectos'
   },
   {
     id: 'action-5',
     icon: 'fa-chart-bar',
     label: 'Ver Reportes',
-    action: 'view-reports'
+    action: 'view-reports',
+    route: '/dashboards/reportes'
   },
   {
     id: 'action-6',
     icon: 'fa-bell',
     label: 'Alertas',
-    action: 'alerts'
+    action: 'alerts',
+    route: '/iniciativas'
   }
 ];
 

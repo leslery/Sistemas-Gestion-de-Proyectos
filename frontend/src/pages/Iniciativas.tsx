@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { iniciativasService } from '../services/api';
 import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
@@ -8,9 +8,10 @@ import { EstadoBadge, PrioridadBadge } from '../components/common/Badge';
 import { Select } from '../components/common/Input';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Iniciativa, EstadoIniciativa, Prioridad } from '../types';
+import { useProjectDetail } from '../contexts/ProjectDetailContext';
 
 export default function Iniciativas() {
-  const navigate = useNavigate();
+  const { openProjectDetail } = useProjectDetail();
   const [iniciativas, setIniciativas] = useState<Iniciativa[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -177,7 +178,7 @@ export default function Iniciativas() {
           columns={columns}
           data={iniciativas}
           keyExtractor={(item) => item.id}
-          onRowClick={(item) => navigate(`/iniciativas/${item.id}`)}
+          onRowClick={(item) => openProjectDetail({ id: item.id.toString(), title: item.titulo, ...item })}
           isLoading={isLoading}
           emptyMessage="No se encontraron iniciativas"
         />

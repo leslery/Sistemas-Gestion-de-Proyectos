@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   dashboardStats,
   projectsInExecution,
@@ -13,17 +13,22 @@ import StatCard from '../components/ui/StatCard';
 import ProjectList from '../components/ui/ProjectList';
 import { QuickActionsSimple } from '../components/ui/QuickActions';
 import PhaseProgress, { Phase } from '../components/ui/PhaseProgress';
-import { useToast } from '../components/ui/Toast';
+import { useProjectDetail } from '../contexts/ProjectDetailContext';
 
 export default function Dashboard() {
-  const { showToast } = useToast();
+  const { openProjectDetail } = useProjectDetail();
+  const navigate = useNavigate();
 
   const handleProjectClick = (project: Project) => {
-    showToast(`Abriendo proyecto: ${project.title}`, 'info');
+    openProjectDetail({ id: project.id, title: project.title, ...project });
   };
 
   const handleQuickActionClick = (action: QuickAction) => {
-    showToast(`Abriendo: ${action.label}`, 'info');
+    if (action.route) {
+      navigate(action.route);
+    } else {
+      showToast(`Abriendo: ${action.label}`, 'info');
+    }
   };
 
   const phases: Phase[] = projectPhases.map(p => ({

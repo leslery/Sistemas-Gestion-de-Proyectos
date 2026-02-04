@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { DateRangePicker } from '../../components/ui/DateRangePicker';
 import { Tabs, TabList, Tab, TabPanel } from '../../components/ui/Tabs';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 interface ReportTemplate {
   id: string;
@@ -108,26 +110,191 @@ export default function CentroReportes() {
     ? reportTemplates
     : reportTemplates.filter((r) => r.categoria === selectedCategory);
 
+  // Datos de ejemplo para los reportes
+  const sampleReportData = {
+    portafolio: [
+      { proyecto: 'Modernización ERP SAP', estado: 'En Ejecución', avance: '75%', presupuesto: '$850,000', responsable: 'Juan Pérez' },
+      { proyecto: 'Automatización Comercial', estado: 'En Revisión', avance: '45%', presupuesto: '$320,000', responsable: 'María García' },
+      { proyecto: 'Ciberseguridad Zero Trust', estado: 'En Riesgo', avance: '60%', presupuesto: '$450,000', responsable: 'Carlos López' },
+      { proyecto: 'Portal Autoatención', estado: 'En Ejecución', avance: '90%', presupuesto: '$180,000', responsable: 'Ana Martínez' },
+    ],
+    financiero: [
+      { categoria: 'CAPEX Aprobado', monto: '$5,000,000', porcentaje: '100%' },
+      { categoria: 'CAPEX Comprometido', monto: '$3,500,000', porcentaje: '70%' },
+      { categoria: 'CAPEX Ejecutado', monto: '$2,500,000', porcentaje: '50%' },
+      { categoria: 'Disponible', monto: '$1,500,000', porcentaje: '30%' },
+    ],
+    avance: [
+      { proyecto: 'Modernización ERP', planificado: '80%', real: '75%', desviacion: '-5%' },
+      { proyecto: 'Migración Cloud', planificado: '50%', real: '60%', desviacion: '+10%' },
+      { proyecto: 'Sistema CRM', planificado: '40%', real: '35%', desviacion: '-5%' },
+    ],
+    gobernanza: [
+      { comite: 'Comité de Expertos', fecha: '05-Feb-2026', estado: 'Programado', temas: 4 },
+      { comite: 'Comité Inversiones', fecha: '12-Feb-2026', estado: 'Programado', temas: 6 },
+      { comite: 'Review Gobernanza', fecha: '19-Feb-2026', estado: 'Programado', temas: 8 },
+    ],
+    riesgos: [
+      { riesgo: 'Retraso en entregas', probabilidad: 'Alta', impacto: 'Alto', mitigacion: 'Seguimiento semanal' },
+      { riesgo: 'Sobrecosto', probabilidad: 'Media', impacto: 'Alto', mitigacion: 'Control presupuestario' },
+      { riesgo: 'Rotación personal', probabilidad: 'Baja', impacto: 'Medio', mitigacion: 'Plan de retención' },
+    ],
+    kpis: [
+      { indicador: 'Proyectos Activos', valor: '34', tendencia: '+12%' },
+      { indicador: 'Cerrados este año', valor: '127', tendencia: '+8%' },
+      { indicador: 'En Banco de Reserva', valor: '45', tendencia: '-5%' },
+      { indicador: 'Cumplimiento Plan', valor: '89%', tendencia: '+3%' },
+    ],
+  };
+
+  const generatePDF = (template: ReportTemplate) => {
+    const doc = new jsPDF();
+    const data = sampleReportData[template.id as keyof typeof sampleReportData] || [];
+
+    // Título
+    doc.setFontSize(20);
+    doc.setTextColor(26, 54, 93); // Color primario
+    doc.text(template.nombre, 20, 20);
+
+    // Subtítulo
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(template.descripcion, 20, 30);
+
+    // Fecha
+    doc.setFontSize(10);
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}`, 20, 40);
+
+    // Línea separadora
+    doc.setDrawColor(26, 54, 93);
+    doc.line(20, 45, 190, 45);
+
+    // Contenido de la tabla
+    let y = 55;
+    doc.setFontSize(11);
+
+    if (data.length > 0) {
+      // Headers
+      const headers = Object.keys(data[0]);
+      doc.setTextColor(255, 255, 255);
+      doc.setFillColor(26, 54, 93);
+      doc.rect(20, y - 5, 170, 8, 'F');
+
+      let x = 22;
+      const colWidth = 170 / headers.length;
+      headers.forEach((header) => {
+        doc.text(header.charAt(0).toUpperCase() + header.slice(1), x, y);
+        x += colWidth;
+      });
+
+      y += 10;
+
+      // Data rows
+      doc.setTextColor(60, 60, 60);
+      data.forEach((row: any, index: number) => {
+        if (index % 2 === 0) {
+          doc.setFillColor(245, 245, 245);
+          doc.rect(20, y - 5, 170, 8, 'F');
+        }
+
+        x = 22;
+        Object.values(row).forEach((value) => {
+          doc.text(String(value), x, y);
+          x += colWidth;
+        });
+        y += 10;
+
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+    }
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Sistema de Gestión de Iniciativas y Proyectos - CGE Chile', 20, 285);
+    doc.text(`Página 1`, 180, 285);
+
+    return doc;
+  };
+
+  const generateExcel = (template: ReportTemplate) => {
+    const data = sampleReportData[template.id as keyof typeof sampleReportData] || [];
+
+    // Crear workbook y worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Ajustar anchos de columna
+    const colWidths = Object.keys(data[0] || {}).map(() => ({ wch: 20 }));
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, template.nombre.substring(0, 31));
+
+    return wb;
+  };
+
   const handleGenerateReport = async (templateId: string, formato: 'pdf' | 'excel') => {
     const template = reportTemplates.find((t) => t.id === templateId);
     if (!template) return;
 
     setGeneratingReport(`${templateId}-${formato}`);
 
-    // Simulate report generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Pequeña pausa para mostrar el loading
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const newReport: GeneratedReport = {
-      id: Date.now().toString(),
-      nombre: `${template.nombre} - ${new Date().toLocaleDateString('es-CL')}`,
-      fecha: new Date().toISOString().split('T')[0],
-      formato,
-      tamaño: formato === 'pdf' ? '1.2 MB' : '850 KB',
-      estado: 'completado',
-    };
+    try {
+      // Crear nombre de archivo con: nombre del reporte + fecha + hora
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10); // 2026-02-04
+      const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-'); // 12-45-30
 
-    setGeneratedReports((prev) => [newReport, ...prev]);
+      // Nombre del reporte sin tildes ni caracteres especiales
+      const reportName = template.nombre
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar tildes
+        .replace(/[^a-zA-Z0-9\s]/g, '') // Solo letras, números y espacios
+        .replace(/\s+/g, '_'); // Espacios por guiones bajos
+
+      const fileName = `${reportName}_${dateStr}_${timeStr}`;
+
+      if (formato === 'pdf') {
+        const doc = generatePDF(template);
+        // Usar método nativo de jsPDF para guardar con extensión .pdf
+        doc.save(`${fileName}.pdf`);
+      } else {
+        const wb = generateExcel(template);
+        // Usar método nativo de XLSX para guardar con extensión .xlsx
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
+      }
+
+      const newReport: GeneratedReport = {
+        id: Date.now().toString(),
+        nombre: `${template.nombre} - ${new Date().toLocaleDateString('es-CL')}`,
+        fecha: new Date().toISOString().split('T')[0],
+        formato,
+        tamaño: formato === 'pdf' ? '45 KB' : '12 KB',
+        estado: 'completado',
+      };
+
+      setGeneratedReports((prev) => [newReport, ...prev]);
+    } catch (error) {
+      console.error('Error generating report:', error);
+    }
+
     setGeneratingReport(null);
+  };
+
+  const handleDownloadReport = (report: GeneratedReport) => {
+    // Para reportes ya generados, regeneramos el archivo
+    const template = reportTemplates.find((t) =>
+      report.nombre.toLowerCase().includes(t.nombre.toLowerCase().split(' ')[0])
+    );
+
+    if (template) {
+      handleGenerateReport(template.id, report.formato);
+    }
   };
 
   return (
@@ -303,7 +470,10 @@ export default function CentroReportes() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="inline-flex items-center gap-1 text-accent hover:text-accent/80 text-sm font-medium">
+                      <button
+                        onClick={() => handleDownloadReport(report)}
+                        className="inline-flex items-center gap-1 text-accent hover:text-accent/80 text-sm font-medium"
+                      >
                         <Download className="h-4 w-4" />
                         Descargar
                       </button>

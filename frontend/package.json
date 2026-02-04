@@ -10,19 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.2",
+    "clsx": "^2.0.0",
+    "date-fns": "^3.0.6",
+    "file-saver": "^2.0.5",
+    "jspdf": "^4.1.0",
+    "lucide-react": "^0.303.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.0",
-    "zustand": "^4.4.7",
-    "axios": "^1.6.2",
-    "recharts": "^2.10.3",
-    "date-fns": "^3.0.6",
-    "lucide-react": "^0.303.0",
-    "clsx": "^2.0.0",
     "react-hook-form": "^7.49.2",
-    "@tanstack/react-query": "^5.17.0"
+    "react-router-dom": "^6.21.0",
+    "recharts": "^2.10.3",
+    "xlsx": "^0.18.5",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",

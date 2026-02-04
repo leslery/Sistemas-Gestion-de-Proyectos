@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { proyectosService } from '../services/api';
 import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
@@ -9,9 +8,10 @@ import Badge from '../components/common/Badge';
 import { Select } from '../components/common/Input';
 import { FolderKanban, Filter } from 'lucide-react';
 import { Proyecto, EstadoProyecto, SemaforoSalud } from '../types';
+import { useProjectDetail } from '../contexts/ProjectDetailContext';
 
 export default function Proyectos() {
-  const navigate = useNavigate();
+  const { openProjectDetail } = useProjectDetail();
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -221,7 +221,7 @@ export default function Proyectos() {
           columns={columns}
           data={proyectos}
           keyExtractor={(item) => item.id}
-          onRowClick={(item) => navigate(`/proyectos/${item.id}`)}
+          onRowClick={(item) => openProjectDetail({ id: item.id.toString(), title: item.nombre, ...item })}
           isLoading={isLoading}
           emptyMessage="No se encontraron proyectos"
         />

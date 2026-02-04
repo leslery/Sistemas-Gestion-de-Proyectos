@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { proyectosService, dashboardService } from '../services/api';
 import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import { PrioridadBadge } from '../components/common/Badge';
 import { Archive, TrendingUp, DollarSign } from 'lucide-react';
+import { useProjectDetail } from '../contexts/ProjectDetailContext';
 
 export default function BancoReserva() {
-  const navigate = useNavigate();
+  const { openProjectDetail } = useProjectDetail();
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +77,7 @@ export default function BancoReserva() {
       key: 'acciones',
       header: '',
       render: (item: any) => (
-        <Button size="sm" variant="ghost" onClick={() => navigate(`/proyectos/${item.id}`)}>
+        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); openProjectDetail({ id: item.id.toString(), title: item.nombre, ...item }); }}>
           Ver Detalle
         </Button>
       ),
@@ -179,7 +179,7 @@ export default function BancoReserva() {
           columns={columns}
           data={proyectos}
           keyExtractor={(item) => item.id}
-          onRowClick={(item) => navigate(`/proyectos/${item.id}`)}
+          onRowClick={(item) => openProjectDetail({ id: item.id.toString(), title: item.nombre, ...item })}
           isLoading={isLoading}
           emptyMessage="No hay proyectos en el banco de reserva"
         />
