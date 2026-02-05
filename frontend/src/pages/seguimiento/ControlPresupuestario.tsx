@@ -106,6 +106,7 @@ export default function ControlPresupuestario() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   const toggleRow = (id: number) => {
     setExpandedRows((prev) => {
@@ -173,14 +174,16 @@ export default function ControlPresupuestario() {
           })
         );
         setProyectos(proyectosMapeados as ProyectoPresupuesto[]);
+        setUsingMockData(false);
       } else {
-        // Datos mock si no hay datos reales
+        // Datos mock si no hay datos reales - SOLO PARA DEMOSTRACIÓN
         setProyectos([
-          { id: 1, codigo: 'PRY-001', nombre: 'Modernización ERP', presupuestoAprobado: 1200000000, ejecutado: 900000000, comprometido: 200000000, disponible: 100000000, porcentajeEjecucion: 75, estado: 'alerta', ejecucionesMensuales: [] },
-          { id: 2, codigo: 'PRY-002', nombre: 'Portal Autoatención', presupuestoAprobado: 500000000, ejecutado: 250000000, comprometido: 100000000, disponible: 150000000, porcentajeEjecucion: 50, estado: 'normal', ejecucionesMensuales: [] },
-          { id: 3, codigo: 'PRY-003', nombre: 'Sistema CRM', presupuestoAprobado: 300000000, ejecutado: 280000000, comprometido: 15000000, disponible: 5000000, porcentajeEjecucion: 93, estado: 'critico', ejecucionesMensuales: [] },
-          { id: 4, codigo: 'PRY-004', nombre: 'BI Analytics', presupuestoAprobado: 400000000, ejecutado: 120000000, comprometido: 80000000, disponible: 200000000, porcentajeEjecucion: 30, estado: 'normal', ejecucionesMensuales: [] },
+          { id: -1, codigo: 'PRY-DEMO-001', nombre: 'Modernización ERP (Demo)', presupuestoAprobado: 1200000000, ejecutado: 900000000, comprometido: 200000000, disponible: 100000000, porcentajeEjecucion: 75, estado: 'alerta', ejecucionesMensuales: [] },
+          { id: -2, codigo: 'PRY-DEMO-002', nombre: 'Portal Autoatención (Demo)', presupuestoAprobado: 500000000, ejecutado: 250000000, comprometido: 100000000, disponible: 150000000, porcentajeEjecucion: 50, estado: 'normal', ejecucionesMensuales: [] },
+          { id: -3, codigo: 'PRY-DEMO-003', nombre: 'Sistema CRM (Demo)', presupuestoAprobado: 300000000, ejecutado: 280000000, comprometido: 15000000, disponible: 5000000, porcentajeEjecucion: 93, estado: 'critico', ejecucionesMensuales: [] },
+          { id: -4, codigo: 'PRY-DEMO-004', nombre: 'BI Analytics (Demo)', presupuestoAprobado: 400000000, ejecutado: 120000000, comprometido: 80000000, disponible: 200000000, porcentajeEjecucion: 30, estado: 'normal', ejecucionesMensuales: [] },
         ]);
+        setUsingMockData(true);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -208,12 +211,39 @@ export default function ControlPresupuestario() {
     disponible: proyectos.reduce((acc, p) => acc + p.disponible, 0),
   };
 
+  // Calcular acumulados previos para un proyecto
+  const calcularAcumulados = (proyecto: ProyectoPresupuesto, año: number, mes: number) => {
+    const ejecuciones = proyecto.ejecucionesMensuales || [];
+    let acumPlanificado = 0;
+    let acumEjecutado = 0;
+
+    ejecuciones.forEach((e) => {
+      // Sumar todos los meses anteriores al seleccionado
+      if (e.año < año || (e.año === año && e.mes < mes)) {
+        acumPlanificado += e.capex_planificado || 0;
+        acumEjecutado += e.capex_ejecutado || 0;
+      }
+    });
+
+    return { acumPlanificado, acumEjecutado };
+  };
+
+  // Calcular porcentaje de avance
+  const calcularAvance = (acumulado: number, nuevo: number, presupuestoTotal: number): number => {
+    if (presupuestoTotal <= 0) return 0;
+    const total = acumulado + nuevo;
+    return Math.min(Math.round((total / presupuestoTotal) * 100), 100);
+  };
+
   // Abrir modal de registro
   const handleOpenRegistro = (proyecto: ProyectoPresupuesto) => {
     setSelectedProyecto(proyecto);
+    const mesActual = new Date().getMonth() + 1;
+    const añoActual = new Date().getFullYear();
+
     setRegistroForm({
-      año: new Date().getFullYear(),
-      mes: new Date().getMonth() + 1,
+      año: añoActual,
+      mes: mesActual,
       capex_planificado: '',
       capex_ejecutado: '',
       avance_planificado: '',
@@ -226,6 +256,12 @@ export default function ControlPresupuestario() {
   // Guardar registro mensual
   const handleSaveRegistro = async () => {
     if (!selectedProyecto) return;
+
+    // Validar que no sea un proyecto de demostración
+    if (selectedProyecto.id < 0) {
+      showToast('No se puede registrar ejecución en proyectos de demostración', 'error');
+      return;
+    }
 
     if (!registroForm.capex_ejecutado && !registroForm.capex_planificado) {
       showToast('Debe ingresar al menos el monto planificado o ejecutado', 'error');
@@ -386,19 +422,21 @@ export default function ControlPresupuestario() {
     const chartData = Array(12).fill(0);
     const planData = Array(12).fill(0);
 
+    // Llenar con datos reales de ejecuciones
     ejecuciones.forEach((e) => {
       if (e.mes >= 1 && e.mes <= 12) {
-        chartData[e.mes - 1] = e.capex_ejecutado;
-        planData[e.mes - 1] = e.capex_planificado;
+        chartData[e.mes - 1] = e.capex_ejecutado || 0;
+        planData[e.mes - 1] = e.capex_planificado || 0;
       }
     });
 
-    // Si no hay datos, generar datos de ejemplo
-    if (ejecuciones.length === 0) {
+    // Solo generar datos de ejemplo si es un proyecto demo (ID negativo)
+    if (proyecto.id < 0 && ejecuciones.length === 0) {
       const monthlyBudget = proyecto.presupuestoAprobado / 12;
-      for (let i = 0; i < 12; i++) {
-        const variation = 0.7 + Math.random() * 0.6; // 70% a 130%
-        chartData[i] = Math.round(monthlyBudget * variation * (i < new Date().getMonth() ? 1 : 0));
+      const currentMonth = new Date().getMonth();
+      for (let i = 0; i <= currentMonth; i++) {
+        const variation = 0.8 + Math.random() * 0.4;
+        chartData[i] = Math.round(monthlyBudget * variation);
         planData[i] = monthlyBudget;
       }
     }
@@ -428,7 +466,13 @@ export default function ControlPresupuestario() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-accent bg-accent/10 border border-accent/20 rounded-lg hover:bg-accent/20 transition-colors"
+            disabled={usingMockData}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              usingMockData
+                ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'
+                : 'text-accent bg-accent/10 border border-accent/20 hover:bg-accent/20'
+            }`}
+            title={usingMockData ? 'No disponible en modo demostración' : 'Importar desde Excel'}
           >
             <Upload className="h-4 w-4" />
             Importar Excel
@@ -447,14 +491,25 @@ export default function ControlPresupuestario() {
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-        <div className="text-sm text-blue-800">
-          <p className="font-medium">Registro de Ejecución Mensual</p>
-          <p className="mt-1">El presupuesto planificado y ejecutado debe registrarse mensualmente para cada proyecto.
-          Use el botón <strong>"+ Registrar"</strong> en cada proyecto o <strong>"Importar Excel"</strong> para carga masiva.</p>
+      {usingMockData ? (
+        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-800">
+            <p className="font-medium">Modo Demostración - Datos de Ejemplo</p>
+            <p className="mt-1">No hay proyectos en ejecución en el sistema. Los datos mostrados son solo para demostración.
+            Para registrar ejecución real, primero debe <strong>crear y activar proyectos</strong> desde el módulo de Iniciativas.</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-800">
+            <p className="font-medium">Registro de Ejecución Mensual</p>
+            <p className="mt-1">El presupuesto planificado y ejecutado debe registrarse mensualmente para cada proyecto.
+            Use el botón <strong>"+ Registrar"</strong> en cada proyecto o <strong>"Importar Excel"</strong> para carga masiva.</p>
+          </div>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -612,13 +667,21 @@ export default function ControlPresupuestario() {
                         <div className="ml-8 space-y-4">
                           {/* Botón de registro */}
                           <div className="flex justify-end">
-                            <button
-                              onClick={() => handleOpenRegistro(proyecto)}
-                              className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors text-sm font-medium"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Registrar Ejecución Mensual
-                            </button>
+                            {usingMockData ? (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed">
+                                <Plus className="h-4 w-4" />
+                                Registrar Ejecución Mensual
+                                <span className="text-xs">(Solo demo)</span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenRegistro(proyecto)}
+                                className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors text-sm font-medium"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Registrar Ejecución Mensual
+                              </button>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -662,40 +725,70 @@ export default function ControlPresupuestario() {
                             {/* Gráfico de ejecución mensual */}
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
                               <h4 className="text-sm font-semibold text-gray-900 mb-3">Ejecución vs Plan Mensual</h4>
-                              <div className="flex items-end gap-1 h-20">
-                                {chartData.map((val, i) => (
-                                  <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                                    {/* Barra de plan (fondo) */}
-                                    <div className="w-full relative" style={{ height: '60px' }}>
+                              <div className="relative" style={{ height: '100px' }}>
+                                {/* Contenedor del gráfico */}
+                                <div className="absolute inset-0 flex items-end gap-1">
+                                  {chartData.map((val, i) => (
+                                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                                      {/* Barra de ejecutado */}
                                       <div
-                                        className="absolute bottom-0 w-full bg-gray-200 rounded-t"
-                                        style={{ height: `${(planData[i] / maxValue) * 100}%` }}
-                                        title={`Plan: ${formatCurrency(planData[i])}`}
-                                      />
-                                      <div
-                                        className={`absolute bottom-0 w-full rounded-t transition-colors ${
-                                          val > planData[i] ? 'bg-red-400' : 'bg-accent/60'
-                                        } hover:opacity-80`}
-                                        style={{ height: `${(val / maxValue) * 100}%` }}
-                                        title={`Ejecutado: ${formatCurrency(val)}`}
+                                        className="w-full bg-accent/70 rounded-t hover:bg-accent transition-colors cursor-pointer"
+                                        style={{
+                                          height: maxValue > 0 ? `${Math.max((val / maxValue) * 100, val > 0 ? 5 : 0)}%` : '0%'
+                                        }}
+                                        title={`${MESES[i]}: ${formatCurrency(val)}`}
                                       />
                                     </div>
-                                  </div>
+                                  ))}
+                                </div>
+                                {/* Línea de planificado (SVG overlay) */}
+                                <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+                                  <polyline
+                                    fill="none"
+                                    stroke="#f59e0b"
+                                    strokeWidth="2"
+                                    strokeDasharray="4,2"
+                                    points={planData.map((val, i) => {
+                                      const x = (i / 11) * 100;
+                                      const y = maxValue > 0 ? 100 - (val / maxValue) * 100 : 100;
+                                      return `${x}%,${y}%`;
+                                    }).join(' ')}
+                                  />
+                                  {/* Puntos en la línea */}
+                                  {planData.map((val, i) => {
+                                    if (val === 0) return null;
+                                    const x = (i / 11) * 100;
+                                    const y = maxValue > 0 ? 100 - (val / maxValue) * 100 : 100;
+                                    return (
+                                      <circle
+                                        key={i}
+                                        cx={`${x}%`}
+                                        cy={`${y}%`}
+                                        r="3"
+                                        fill="#f59e0b"
+                                        className="pointer-events-auto cursor-pointer"
+                                      >
+                                        <title>{`Plan ${MESES[i]}: ${formatCurrency(val)}`}</title>
+                                      </circle>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                              {/* Etiquetas de meses */}
+                              <div className="flex justify-between text-xs text-gray-400 mt-2 px-1">
+                                {['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((m, i) => (
+                                  <span key={i} className="w-4 text-center">{m}</span>
                                 ))}
                               </div>
-                              <div className="flex justify-between text-xs text-gray-400 mt-2">
-                                <span>Ene</span>
-                                <span>Jun</span>
-                                <span>Dic</span>
-                              </div>
-                              <div className="flex items-center gap-4 mt-3 text-xs">
-                                <div className="flex items-center gap-1">
-                                  <div className="w-3 h-3 bg-accent/60 rounded" />
-                                  <span className="text-gray-500">Ejecutado</span>
+                              {/* Leyenda */}
+                              <div className="flex items-center justify-center gap-6 mt-3 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-4 h-3 bg-accent/70 rounded" />
+                                  <span className="text-gray-600">Ejecutado</span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <div className="w-3 h-3 bg-gray-200 rounded" />
-                                  <span className="text-gray-500">Planificado</span>
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-4 h-0.5 bg-amber-500" style={{ borderTop: '2px dashed #f59e0b' }} />
+                                  <span className="text-gray-600">Planificado</span>
                                 </div>
                               </div>
                             </div>
@@ -841,7 +934,19 @@ export default function ControlPresupuestario() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Año *</label>
                   <select
                     value={registroForm.año}
-                    onChange={(e) => setRegistroForm({ ...registroForm, año: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const nuevoAño = parseInt(e.target.value);
+                      // Recalcular avances con el nuevo año
+                      const { acumPlanificado, acumEjecutado } = calcularAcumulados(selectedProyecto!, nuevoAño, registroForm.mes);
+                      const planVal = parseFloat(registroForm.capex_planificado) || 0;
+                      const ejecVal = parseFloat(registroForm.capex_ejecutado) || 0;
+                      setRegistroForm({
+                        ...registroForm,
+                        año: nuevoAño,
+                        avance_planificado: calcularAvance(acumPlanificado, planVal, selectedProyecto!.presupuestoAprobado).toString(),
+                        avance_real: calcularAvance(acumEjecutado, ejecVal, selectedProyecto!.presupuestoAprobado).toString()
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
                   >
                     {[2024, 2025, 2026, 2027].map((y) => (
@@ -853,7 +958,19 @@ export default function ControlPresupuestario() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mes *</label>
                   <select
                     value={registroForm.mes}
-                    onChange={(e) => setRegistroForm({ ...registroForm, mes: parseInt(e.target.value) })}
+                    onChange={(e) => {
+                      const nuevoMes = parseInt(e.target.value);
+                      // Recalcular avances con el nuevo mes
+                      const { acumPlanificado, acumEjecutado } = calcularAcumulados(selectedProyecto!, registroForm.año, nuevoMes);
+                      const planVal = parseFloat(registroForm.capex_planificado) || 0;
+                      const ejecVal = parseFloat(registroForm.capex_ejecutado) || 0;
+                      setRegistroForm({
+                        ...registroForm,
+                        mes: nuevoMes,
+                        avance_planificado: calcularAvance(acumPlanificado, planVal, selectedProyecto!.presupuestoAprobado).toString(),
+                        avance_real: calcularAvance(acumEjecutado, ejecVal, selectedProyecto!.presupuestoAprobado).toString()
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
                   >
                     {MESES.map((m, i) => (
@@ -863,55 +980,108 @@ export default function ControlPresupuestario() {
                 </div>
               </div>
 
+              {/* Info del presupuesto */}
+              {selectedProyecto && (() => {
+                const { acumPlanificado, acumEjecutado } = calcularAcumulados(selectedProyecto, registroForm.año, registroForm.mes);
+                const presupuestoTotal = selectedProyecto.presupuestoAprobado;
+                const nuevoPlani = parseFloat(registroForm.capex_planificado) || 0;
+                const nuevoEjec = parseFloat(registroForm.capex_ejecutado) || 0;
+                const avancePlanCalc = calcularAvance(acumPlanificado, nuevoPlani, presupuestoTotal);
+                const avanceRealCalc = calcularAvance(acumEjecutado, nuevoEjec, presupuestoTotal);
+
+                return (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-blue-800">
+                      <div>
+                        <span className="text-blue-600">Presupuesto Total:</span>
+                        <span className="font-medium ml-2">{formatCurrency(presupuestoTotal)}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">Acum. Ejecutado:</span>
+                        <span className="font-medium ml-2">{formatCurrency(acumEjecutado)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Montos */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CAPEX Planificado</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CAPEX Planificado (este mes)</label>
                   <input
                     type="number"
                     value={registroForm.capex_planificado}
-                    onChange={(e) => setRegistroForm({ ...registroForm, capex_planificado: e.target.value })}
+                    onChange={(e) => {
+                      const nuevoValor = e.target.value;
+                      const { acumPlanificado } = calcularAcumulados(selectedProyecto!, registroForm.año, registroForm.mes);
+                      const avanceCalc = calcularAvance(acumPlanificado, parseFloat(nuevoValor) || 0, selectedProyecto!.presupuestoAprobado);
+                      setRegistroForm({
+                        ...registroForm,
+                        capex_planificado: nuevoValor,
+                        avance_planificado: avanceCalc.toString()
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
                     placeholder="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CAPEX Ejecutado *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CAPEX Ejecutado (este mes) *</label>
                   <input
                     type="number"
                     value={registroForm.capex_ejecutado}
-                    onChange={(e) => setRegistroForm({ ...registroForm, capex_ejecutado: e.target.value })}
+                    onChange={(e) => {
+                      const nuevoValor = e.target.value;
+                      const { acumEjecutado } = calcularAcumulados(selectedProyecto!, registroForm.año, registroForm.mes);
+                      const avanceCalc = calcularAvance(acumEjecutado, parseFloat(nuevoValor) || 0, selectedProyecto!.presupuestoAprobado);
+                      setRegistroForm({
+                        ...registroForm,
+                        capex_ejecutado: nuevoValor,
+                        avance_real: avanceCalc.toString()
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
                     placeholder="0"
                   />
                 </div>
               </div>
 
-              {/* Avance */}
+              {/* Avance (calculado automáticamente) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Avance Planificado (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={registroForm.avance_planificado}
-                    onChange={(e) => setRegistroForm({ ...registroForm, avance_planificado: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
-                    placeholder="0"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Avance Planificado (%)
+                    <span className="text-xs text-gray-400 ml-1">(calculado)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={registroForm.avance_planificado}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Avance Real (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={registroForm.avance_real}
-                    onChange={(e) => setRegistroForm({ ...registroForm, avance_real: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-accent"
-                    placeholder="0"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Avance Real (%)
+                    <span className="text-xs text-gray-400 ml-1">(calculado)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={registroForm.avance_real}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                  </div>
                 </div>
               </div>
 

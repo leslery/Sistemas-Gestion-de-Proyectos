@@ -18,7 +18,8 @@ from ..schemas.proyecto import (
     HitoProyecto as HitoSchema, HitoProyectoCreate,
     RiesgoProyecto as RiesgoSchema, RiesgoProyectoCreate,
     IssueProyecto as IssueSchema, IssueProyectoCreate,
-    BitacoraProyecto as BitacoraSchema, BitacoraProyectoCreate
+    BitacoraProyecto as BitacoraSchema, BitacoraProyectoCreate,
+    PresupuestoProyecto as PresupuestoSchema
 )
 from ..utils.security import get_current_user, check_role
 
@@ -66,11 +67,25 @@ async def listar_proyectos(
             IssueProyecto.estado.in_(["abierto", "en_progreso"])
         ).count()
 
+        # Construir datos base del proyecto (excluyendo relaciones)
+        proyecto_dict = {k: v for k, v in p.__dict__.items()
+                        if not k.startswith('_') and k not in ['iniciativa', 'fases', 'presupuesto',
+                        'hitos', 'riesgos', 'issues', 'bitacora', 'ejecuciones_mensuales',
+                        'clasificaciones_financieras', 'cambios_presupuesto', 'planes_anuales']}
+
+        # Serializar presupuesto si existe
+        presupuesto_data = None
+        if p.presupuesto:
+            presupuesto_data = PresupuestoSchema(
+                **{k: v for k, v in p.presupuesto.__dict__.items() if not k.startswith('_') and k != 'proyecto'}
+            )
+
         resultado.append(ProyectoConDetalles(
-            **{k: v for k, v in p.__dict__.items() if not k.startswith('_')},
+            **proyecto_dict,
             iniciativa_titulo=p.iniciativa.titulo if p.iniciativa else None,
             area_demandante_nombre=p.iniciativa.area_demandante.nombre if p.iniciativa and p.iniciativa.area_demandante else None,
-            fases=[FaseSchema(**{k: v for k, v in f.__dict__.items() if not k.startswith('_')}) for f in p.fases],
+            fases=[FaseSchema(**{k: v for k, v in f.__dict__.items() if not k.startswith('_') and k not in ['proyecto', 'hitos']}) for f in p.fases],
+            presupuesto=presupuesto_data,
             riesgos_abiertos=riesgos_abiertos,
             issues_abiertos=issues_abiertos
         ))

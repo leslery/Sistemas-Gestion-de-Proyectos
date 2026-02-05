@@ -21,17 +21,20 @@ async def registrar_ejecucion_mensual(
     current_user: Usuario = Depends(get_current_user)
 ):
     """Registrar ejecución mensual de un proyecto (plan y consumo)"""
-    return PresupuestoService.registrar_ejecucion(
-        db=db,
-        proyecto_id=ejecucion.proyecto_id,
-        año=ejecucion.año,
-        mes=ejecucion.mes,
-        capex_ejecutado=ejecucion.capex_ejecutado,
-        avance_real=ejecucion.avance_real,
-        capex_planificado=ejecucion.capex_planificado,
-        avance_planificado=ejecucion.avance_planificado,
-        comentarios=ejecucion.comentarios
-    )
+    try:
+        return PresupuestoService.registrar_ejecucion(
+            db=db,
+            proyecto_id=ejecucion.proyecto_id,
+            año=ejecucion.año,
+            mes=ejecucion.mes,
+            capex_ejecutado=ejecucion.capex_ejecutado,
+            avance_real=ejecucion.avance_real,
+            capex_planificado=ejecucion.capex_planificado,
+            avance_planificado=ejecucion.avance_planificado,
+            comentarios=ejecucion.comentarios
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.get("/ejecucion/proyecto/{proyecto_id}")

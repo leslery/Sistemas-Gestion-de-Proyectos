@@ -131,6 +131,13 @@ class PresupuestoService:
         comentarios: Optional[str] = None
     ) -> EjecucionMensual:
         """Registra la ejecución mensual de un proyecto (plan y real)"""
+        from ..models.proyecto import Proyecto
+
+        # Validar que el proyecto existe
+        proyecto = db.query(Proyecto).filter(Proyecto.id == proyecto_id).first()
+        if not proyecto:
+            raise ValueError(f"Proyecto con ID {proyecto_id} no encontrado")
+
         # Buscar si ya existe registro para el mes
         ejecucion = db.query(EjecucionMensual).filter(
             EjecucionMensual.proyecto_id == proyecto_id,
