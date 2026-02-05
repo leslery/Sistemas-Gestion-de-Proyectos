@@ -126,9 +126,11 @@ class PresupuestoService:
         mes: int,
         capex_ejecutado: Decimal,
         avance_real: int,
+        capex_planificado: Decimal = Decimal(0),
+        avance_planificado: int = 0,
         comentarios: Optional[str] = None
     ) -> EjecucionMensual:
-        """Registra la ejecución mensual de un proyecto"""
+        """Registra la ejecución mensual de un proyecto (plan y real)"""
         # Buscar si ya existe registro para el mes
         ejecucion = db.query(EjecucionMensual).filter(
             EjecucionMensual.proyecto_id == proyecto_id,
@@ -137,7 +139,9 @@ class PresupuestoService:
         ).first()
 
         if ejecucion:
+            ejecucion.capex_planificado = capex_planificado
             ejecucion.capex_ejecutado = capex_ejecutado
+            ejecucion.avance_planificado = avance_planificado
             ejecucion.avance_real = avance_real
             ejecucion.comentarios = comentarios
         else:
@@ -145,7 +149,9 @@ class PresupuestoService:
                 proyecto_id=proyecto_id,
                 año=año,
                 mes=mes,
+                capex_planificado=capex_planificado,
                 capex_ejecutado=capex_ejecutado,
+                avance_planificado=avance_planificado,
                 avance_real=avance_real,
                 comentarios=comentarios
             )
