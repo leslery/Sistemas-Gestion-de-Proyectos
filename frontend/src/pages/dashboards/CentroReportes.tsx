@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FileBarChart,
   Download,
@@ -13,11 +13,13 @@ import {
   DollarSign,
   Users,
   TrendingUp,
+  AlertCircle,
 } from 'lucide-react';
 import { DateRangePicker } from '../../components/ui/DateRangePicker';
 import { Tabs, TabList, Tab, TabPanel } from '../../components/ui/Tabs';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { dashboardService, proyectosService, iniciativasService } from '../../services/api';
 
 interface ReportTemplate {
   id: string;
@@ -98,11 +100,153 @@ export default function CentroReportes() {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
-  const [generatedReports, setGeneratedReports] = useState<GeneratedReport[]>([
-    { id: '1', nombre: 'Reporte de Portafolio - Febrero 2024', fecha: '2024-02-10', formato: 'pdf', tamaño: '2.4 MB', estado: 'completado' },
-    { id: '2', nombre: 'Reporte Financiero Q1', fecha: '2024-02-09', formato: 'excel', tamaño: '1.8 MB', estado: 'completado' },
-    { id: '3', nombre: 'Matriz de Riesgos', fecha: '2024-02-08', formato: 'pdf', tamaño: '890 KB', estado: 'completado' },
-  ]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [generatedReports, setGeneratedReports] = useState<GeneratedReport[]>([]);
+
+  // Estado para datos reales del backend
+  const [reportData, setReportData] = useState<{
+    portafolio: any[];
+    financiero: any[];
+    avance: any[];
+    gobernanza: any[];
+    riesgos: any[];
+    kpis: any[];
+  }>({
+    portafolio: [],
+    financiero: [],
+    avance: [],
+    gobernanza: [],
+    riesgos: [],
+    kpis: [],
+  });
+
+  // Cargar datos del backend cuando cambia el rango de fechas
+  useEffect(() => {
+    const fetchReportData = async () => {
+      setIsLoadingData(true);
+      try {
+        const año = dateRange.end?.getFullYear() || new Date().getFullYear();
+
+        // Obtener datos de las diferentes APIs
+        const [proyectos, kpisData, financieroData, iniciativas] = await Promise.all([
+          proyectosService.getAll().catch(() => []),
+          dashboardService.getKPIs(año).catch(() => null),
+          dashboardService.getFinanciero(año).catch(() => null),
+          iniciativasService.getAll().catch(() => []),
+        ]);
+
+        // Filtrar por rango de fechas si es necesario
+        const filteredProyectos = proyectos.filter((p: any) => {
+          if (!dateRange.start || !dateRange.end) return true;
+          const fechaProyecto = new Date(p.created_at || p.fecha_activacion);
+          return fechaProyecto >= dateRange.start && fechaProyecto <= dateRange.end;
+        });
+
+        // Formatear datos para portafolio
+        const portafolioData = filteredProyectos.map((p: any) => ({
+          proyecto: p.nombre || p.codigo_proyecto,
+          estado: p.estado?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Sin estado',
+          avance: `${p.avance_porcentaje || 0}%`,
+          presupuesto: new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(p.presupuesto_asignado || 0),
+          responsable: p.responsable_nombre || 'Sin asignar',
+        }));
+
+        // Formatear datos financieros
+        const financieroFormatted = financieroData ? [
+          { categoria: 'CAPEX Aprobado', monto: formatCurrency(financieroData.capex_aprobado || 0), porcentaje: '100%' },
+          { categoria: 'CAPEX Comprometido', monto: formatCurrency(financieroData.capex_comprometido || 0), porcentaje: `${Math.round((financieroData.capex_comprometido / financieroData.capex_aprobado) * 100) || 0}%` },
+          { categoria: 'CAPEX Ejecutado', monto: formatCurrency(financieroData.capex_ejecutado || 0), porcentaje: `${Math.round((financieroData.capex_ejecutado / financieroData.capex_aprobado) * 100) || 0}%` },
+          { categoria: 'Disponible', monto: formatCurrency((financieroData.capex_aprobado - financieroData.capex_ejecutado) || 0), porcentaje: `${Math.round(((financieroData.capex_aprobado - financieroData.capex_ejecutado) / financieroData.capex_aprobado) * 100) || 0}%` },
+        ] : [];
+
+        // Formatear datos de avance
+        const avanceData = filteredProyectos.slice(0, 10).map((p: any) => ({
+          proyecto: p.nombre || p.codigo_proyecto,
+          planificado: '100%',
+          real: `${p.avance_porcentaje || 0}%`,
+          desviacion: `${(p.avance_porcentaje || 0) - 100}%`,
+        }));
+
+        // Formatear KPIs
+        const kpisFormatted = kpisData ? [
+          { indicador: 'Proyectos Activos', valor: String(kpisData.total_proyectos || proyectos.length), tendencia: '-' },
+          { indicador: 'En Ejecución', valor: String(kpisData.proyectos_por_estado?.en_ejecucion || 0), tendencia: '-' },
+          { indicador: 'Completados', valor: String(kpisData.proyectos_por_estado?.completado || 0), tendencia: '-' },
+          { indicador: 'Semáforo Verde', valor: String(kpisData.semaforo?.verde || 0), tendencia: '-' },
+        ] : [];
+
+        // Datos de gobernanza (mock por ahora - no hay endpoint)
+        const gobernanzaData = [
+          { comite: 'Comité de Expertos', fecha: 'Próxima sesión', estado: 'Programado', temas: iniciativas.filter((i: any) => i.estado === 'en_evaluacion').length },
+          { comite: 'Comité Inversiones', fecha: 'Próxima sesión', estado: 'Programado', temas: iniciativas.filter((i: any) => i.estado === 'aprobada').length },
+        ];
+
+        // Datos de riesgos (se obtienen de proyectos)
+        const riesgosData = filteredProyectos
+          .filter((p: any) => p.riesgos_abiertos > 0)
+          .map((p: any) => ({
+            proyecto: p.nombre || p.codigo_proyecto,
+            riesgosAbiertos: p.riesgos_abiertos || 0,
+            issuesAbiertos: p.issues_abiertos || 0,
+            semaforo: p.semaforo_salud || 'verde',
+          }));
+
+        setReportData({
+          portafolio: portafolioData.length > 0 ? portafolioData : getDefaultData('portafolio'),
+          financiero: financieroFormatted.length > 0 ? financieroFormatted : getDefaultData('financiero'),
+          avance: avanceData.length > 0 ? avanceData : getDefaultData('avance'),
+          gobernanza: gobernanzaData,
+          riesgos: riesgosData.length > 0 ? riesgosData : getDefaultData('riesgos'),
+          kpis: kpisFormatted.length > 0 ? kpisFormatted : getDefaultData('kpis'),
+        });
+      } catch (error) {
+        console.error('Error fetching report data:', error);
+        // Usar datos por defecto si falla
+        setReportData({
+          portafolio: getDefaultData('portafolio'),
+          financiero: getDefaultData('financiero'),
+          avance: getDefaultData('avance'),
+          gobernanza: getDefaultData('gobernanza'),
+          riesgos: getDefaultData('riesgos'),
+          kpis: getDefaultData('kpis'),
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchReportData();
+  }, [dateRange]);
+
+  // Función auxiliar para formatear moneda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(value);
+  };
+
+  // Datos por defecto cuando no hay datos del backend
+  const getDefaultData = (tipo: string) => {
+    const defaults: Record<string, any[]> = {
+      portafolio: [
+        { proyecto: 'Sin proyectos', estado: '-', avance: '-', presupuesto: '-', responsable: '-' },
+      ],
+      financiero: [
+        { categoria: 'Sin datos financieros', monto: '-', porcentaje: '-' },
+      ],
+      avance: [
+        { proyecto: 'Sin datos de avance', planificado: '-', real: '-', desviacion: '-' },
+      ],
+      gobernanza: [
+        { comite: 'Sin sesiones programadas', fecha: '-', estado: '-', temas: 0 },
+      ],
+      riesgos: [
+        { proyecto: 'Sin riesgos registrados', riesgosAbiertos: 0, issuesAbiertos: 0, semaforo: '-' },
+      ],
+      kpis: [
+        { indicador: 'Sin KPIs disponibles', valor: '-', tendencia: '-' },
+      ],
+    };
+    return defaults[tipo] || [];
+  };
 
   const categories = ['all', ...new Set(reportTemplates.map((r) => r.categoria))];
 
@@ -110,46 +254,9 @@ export default function CentroReportes() {
     ? reportTemplates
     : reportTemplates.filter((r) => r.categoria === selectedCategory);
 
-  // Datos de ejemplo para los reportes
-  const sampleReportData = {
-    portafolio: [
-      { proyecto: 'Modernización ERP SAP', estado: 'En Ejecución', avance: '75%', presupuesto: '$850,000', responsable: 'Juan Pérez' },
-      { proyecto: 'Automatización Comercial', estado: 'En Revisión', avance: '45%', presupuesto: '$320,000', responsable: 'María García' },
-      { proyecto: 'Ciberseguridad Zero Trust', estado: 'En Riesgo', avance: '60%', presupuesto: '$450,000', responsable: 'Carlos López' },
-      { proyecto: 'Portal Autoatención', estado: 'En Ejecución', avance: '90%', presupuesto: '$180,000', responsable: 'Ana Martínez' },
-    ],
-    financiero: [
-      { categoria: 'CAPEX Aprobado', monto: '$5,000,000', porcentaje: '100%' },
-      { categoria: 'CAPEX Comprometido', monto: '$3,500,000', porcentaje: '70%' },
-      { categoria: 'CAPEX Ejecutado', monto: '$2,500,000', porcentaje: '50%' },
-      { categoria: 'Disponible', monto: '$1,500,000', porcentaje: '30%' },
-    ],
-    avance: [
-      { proyecto: 'Modernización ERP', planificado: '80%', real: '75%', desviacion: '-5%' },
-      { proyecto: 'Migración Cloud', planificado: '50%', real: '60%', desviacion: '+10%' },
-      { proyecto: 'Sistema CRM', planificado: '40%', real: '35%', desviacion: '-5%' },
-    ],
-    gobernanza: [
-      { comite: 'Comité de Expertos', fecha: '05-Feb-2026', estado: 'Programado', temas: 4 },
-      { comite: 'Comité Inversiones', fecha: '12-Feb-2026', estado: 'Programado', temas: 6 },
-      { comite: 'Review Gobernanza', fecha: '19-Feb-2026', estado: 'Programado', temas: 8 },
-    ],
-    riesgos: [
-      { riesgo: 'Retraso en entregas', probabilidad: 'Alta', impacto: 'Alto', mitigacion: 'Seguimiento semanal' },
-      { riesgo: 'Sobrecosto', probabilidad: 'Media', impacto: 'Alto', mitigacion: 'Control presupuestario' },
-      { riesgo: 'Rotación personal', probabilidad: 'Baja', impacto: 'Medio', mitigacion: 'Plan de retención' },
-    ],
-    kpis: [
-      { indicador: 'Proyectos Activos', valor: '34', tendencia: '+12%' },
-      { indicador: 'Cerrados este año', valor: '127', tendencia: '+8%' },
-      { indicador: 'En Banco de Reserva', valor: '45', tendencia: '-5%' },
-      { indicador: 'Cumplimiento Plan', valor: '89%', tendencia: '+3%' },
-    ],
-  };
-
   const generatePDF = (template: ReportTemplate) => {
     const doc = new jsPDF();
-    const data = sampleReportData[template.id as keyof typeof sampleReportData] || [];
+    const data = reportData[template.id as keyof typeof reportData] || [];
 
     // Título
     doc.setFontSize(20);
@@ -161,16 +268,21 @@ export default function CentroReportes() {
     doc.setTextColor(100, 100, 100);
     doc.text(template.descripcion, 20, 30);
 
-    // Fecha
+    // Fecha de generación y período
     doc.setFontSize(10);
     doc.text(`Generado: ${new Date().toLocaleDateString('es-CL')} ${new Date().toLocaleTimeString('es-CL')}`, 20, 40);
 
+    // Mostrar período del filtro
+    if (dateRange.start && dateRange.end) {
+      doc.text(`Período: ${dateRange.start.toLocaleDateString('es-CL')} - ${dateRange.end.toLocaleDateString('es-CL')}`, 20, 48);
+    }
+
     // Línea separadora
     doc.setDrawColor(26, 54, 93);
-    doc.line(20, 45, 190, 45);
+    doc.line(20, 53, 190, 53);
 
     // Contenido de la tabla
-    let y = 55;
+    let y = 63;
     doc.setFontSize(11);
 
     if (data.length > 0) {
@@ -221,7 +333,7 @@ export default function CentroReportes() {
   };
 
   const generateExcel = (template: ReportTemplate) => {
-    const data = sampleReportData[template.id as keyof typeof sampleReportData] || [];
+    const data = reportData[template.id as keyof typeof reportData] || [];
 
     // Crear workbook y worksheet
     const wb = XLSX.utils.book_new();
@@ -269,12 +381,19 @@ export default function CentroReportes() {
         XLSX.writeFile(wb, `${fileName}.xlsx`);
       }
 
+      // Usar fecha local consistente
+      const fechaLocal = new Date();
+      const fechaStr = `${fechaLocal.getFullYear()}-${String(fechaLocal.getMonth() + 1).padStart(2, '0')}-${String(fechaLocal.getDate()).padStart(2, '0')}`;
+
+      // Obtener datos para calcular tamaño aproximado
+      const dataLength = (reportData[templateId as keyof typeof reportData] || []).length;
+
       const newReport: GeneratedReport = {
         id: Date.now().toString(),
-        nombre: `${template.nombre} - ${new Date().toLocaleDateString('es-CL')}`,
-        fecha: new Date().toISOString().split('T')[0],
+        nombre: `${template.nombre} - ${fechaLocal.toLocaleDateString('es-CL')}`,
+        fecha: fechaStr,
         formato,
-        tamaño: formato === 'pdf' ? '45 KB' : '12 KB',
+        tamaño: formato === 'pdf' ? `~${Math.round(dataLength * 5 + 30)} KB` : `~${Math.round(dataLength * 2 + 10)} KB`,
         estado: 'completado',
       };
 
@@ -328,7 +447,21 @@ export default function CentroReportes() {
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+        {isLoadingData && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent" />
+            Cargando datos...
+          </div>
+        )}
       </div>
+
+      {/* Indicador de datos cargados */}
+      {!isLoadingData && reportData.portafolio.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+          <CheckCircle className="h-4 w-4" />
+          Datos cargados: {reportData.portafolio.length} proyectos encontrados para el período seleccionado
+        </div>
+      )}
 
       <Tabs defaultValue="templates">
         <TabList>
