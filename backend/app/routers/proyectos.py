@@ -10,6 +10,7 @@ from ..models.proyecto import (
     RiesgoProyecto, IssueProyecto, BitacoraProyecto, SemaforoSalud
 )
 from ..models.iniciativa import Iniciativa, EstadoIniciativa
+from ..models.presupuesto import PresupuestoProyecto
 from ..schemas.proyecto import (
     Proyecto as ProyectoSchema, ProyectoCreate, ProyectoUpdate,
     ProyectoConDetalles,
@@ -169,9 +170,36 @@ async def activar_proyecto(
     if proyecto.iniciativa:
         proyecto.iniciativa.estado = EstadoIniciativa.ACTIVADA
 
+    # Crear PresupuestoProyecto automáticamente si no existe
+    presupuesto_existente = db.query(PresupuestoProyecto).filter(
+        PresupuestoProyecto.proyecto_id == proyecto_id
+    ).first()
+
+    if not presupuesto_existente:
+        # Calcular CAPEX y OPEX basado en el presupuesto asignado
+        # Por defecto 80% CAPEX, 20% OPEX (puede ajustarse en informe de factibilidad)
+        monto_total = proyecto.presupuesto_asignado or 0
+        capex_estimado = monto_total * 0.8
+        opex_estimado = monto_total * 0.2
+
+        nuevo_presupuesto = PresupuestoProyecto(
+            proyecto_id=proyecto_id,
+            capex_aprobado=capex_estimado,
+            capex_comprometido=0,
+            capex_ejecutado=0,
+            opex_proyectado_anual=opex_estimado,
+            fecha_aprobacion=datetime.utcnow(),
+            aprobado_por=current_user.id
+        )
+        db.add(nuevo_presupuesto)
+
     db.commit()
 
-    return {"mensaje": "Proyecto activado correctamente"}
+    return {
+        "mensaje": "Proyecto activado correctamente",
+        "presupuesto_creado": not presupuesto_existente,
+        "presupuesto_asignado": float(proyecto.presupuesto_asignado or 0)
+    }
 
 
 @router.post("/{proyecto_id}/cerrar")

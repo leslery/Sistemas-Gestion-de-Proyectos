@@ -40,6 +40,90 @@ async def obtener_presupuesto_proyecto(
     return presupuesto
 
 
+@router.get("/proyecto/{proyecto_id}/detalle")
+async def obtener_presupuesto_detalle(
+    proyecto_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Obtener presupuesto detallado con indicadores CPI/SPI calculados"""
+    from ..models.proyecto import Proyecto, EjecucionMensual
+    from sqlalchemy import func
+
+    presupuesto = db.query(PresupuestoProyecto).filter(
+        PresupuestoProyecto.proyecto_id == proyecto_id
+    ).first()
+
+    proyecto = db.query(Proyecto).filter(Proyecto.id == proyecto_id).first()
+
+    if not proyecto:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+
+    # Obtener ejecuciones mensuales
+    ejecuciones = db.query(EjecucionMensual).filter(
+        EjecucionMensual.proyecto_id == proyecto_id
+    ).all()
+
+    # Calcular totales de ejecución
+    total_planificado = sum(float(e.capex_planificado or 0) for e in ejecuciones)
+    total_ejecutado = sum(float(e.capex_ejecutado or 0) for e in ejecuciones)
+    avance_planificado = max((e.avance_planificado or 0) for e in ejecuciones) if ejecuciones else 0
+    avance_real = proyecto.avance_porcentaje or 0
+
+    # Calcular indicadores
+    # CPI (Cost Performance Index) = Valor Ganado / Costo Real
+    # Si CPI > 1: bajo presupuesto, CPI < 1: sobre presupuesto
+    cpi = 1.0
+    if total_ejecutado > 0 and total_planificado > 0:
+        # Valor ganado = % avance real * presupuesto total planificado
+        valor_ganado = (avance_real / 100) * total_planificado
+        cpi = round(valor_ganado / total_ejecutado, 2) if total_ejecutado > 0 else 1.0
+
+    # SPI (Schedule Performance Index) = Avance Real / Avance Planificado
+    # Si SPI > 1: adelantado, SPI < 1: atrasado
+    spi = 1.0
+    if avance_planificado > 0:
+        spi = round(avance_real / avance_planificado, 2)
+
+    # Desglose CAPEX/OPEX
+    capex_aprobado = float(presupuesto.capex_aprobado) if presupuesto else float(proyecto.presupuesto_asignado or 0) * 0.8
+    capex_ejecutado = float(presupuesto.capex_ejecutado) if presupuesto else total_ejecutado
+    capex_comprometido = float(presupuesto.capex_comprometido) if presupuesto else 0
+    opex_proyectado = float(presupuesto.opex_proyectado_anual) if presupuesto else float(proyecto.presupuesto_asignado or 0) * 0.2
+
+    return {
+        "proyecto_id": proyecto_id,
+        "codigo": proyecto.codigo_proyecto,
+        "nombre": proyecto.nombre,
+        "presupuesto_total": float(proyecto.presupuesto_asignado or 0),
+        "desglose": {
+            "capex": {
+                "aprobado": capex_aprobado,
+                "comprometido": capex_comprometido,
+                "ejecutado": capex_ejecutado,
+                "disponible": capex_aprobado - capex_ejecutado - capex_comprometido
+            },
+            "opex": {
+                "proyectado_anual": opex_proyectado,
+                "tipo": presupuesto.opex_tipo.value if presupuesto and presupuesto.opex_tipo else "otro"
+            }
+        },
+        "ejecucion": {
+            "total_planificado": total_planificado,
+            "total_ejecutado": total_ejecutado,
+            "avance_planificado": avance_planificado,
+            "avance_real": avance_real
+        },
+        "indicadores": {
+            "cpi": cpi,
+            "cpi_estado": "critico" if cpi < 0.9 else "alerta" if cpi < 0.95 else "normal",
+            "spi": spi,
+            "spi_estado": "critico" if spi < 0.8 else "alerta" if spi < 0.95 else "normal"
+        },
+        "tiene_presupuesto_detallado": presupuesto is not None
+    }
+
+
 @router.post("/proyecto/{proyecto_id}", response_model=PresupuestoSchema)
 async def crear_presupuesto_proyecto(
     proyecto_id: int,

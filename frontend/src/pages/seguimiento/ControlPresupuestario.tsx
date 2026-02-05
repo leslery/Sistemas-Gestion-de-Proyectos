@@ -20,6 +20,28 @@ import {
 import { KPICard } from '../../components/ui/KPICard';
 import { DateRangePicker } from '../../components/ui/DateRangePicker';
 import { presupuestoService, dashboardService, seguimientoService, proyectosService } from '../../services/api';
+
+interface PresupuestoDetalle {
+  desglose: {
+    capex: {
+      aprobado: number;
+      comprometido: number;
+      ejecutado: number;
+      disponible: number;
+    };
+    opex: {
+      proyectado_anual: number;
+      tipo: string;
+    };
+  };
+  indicadores: {
+    cpi: number;
+    cpi_estado: 'normal' | 'alerta' | 'critico';
+    spi: number;
+    spi_estado: 'normal' | 'alerta' | 'critico';
+  };
+  tiene_presupuesto_detallado: boolean;
+}
 import { useToast } from '../../components/ui/Toast';
 import * as XLSX from 'xlsx';
 
@@ -46,6 +68,7 @@ interface ProyectoPresupuesto {
   porcentajeEjecucion: number;
   estado: 'normal' | 'alerta' | 'critico';
   ejecucionesMensuales?: EjecucionMensual[];
+  presupuestoDetalle?: PresupuestoDetalle;
 }
 
 const MESES = [
@@ -113,21 +136,39 @@ export default function ControlPresupuestario() {
             // Obtener ejecuciones mensuales para cada proyecto
             const ejecuciones = await seguimientoService.getEjecucionProyecto(p.id, dateRange.end?.getFullYear()).catch(() => []);
 
+            // Obtener presupuesto detallado con indicadores
+            const presupuestoDetalle = await presupuestoService.getDetalle(p.id).catch(() => null);
+
             const totalEjecutado = ejecuciones.reduce((acc: number, e: any) => acc + (e.capex_ejecutado || 0), 0);
             const presupuesto = p.presupuesto_asignado || 0;
-            const porcentaje = presupuesto > 0 ? Math.round((totalEjecutado / presupuesto) * 100) : 0;
+
+            // Usar datos del presupuesto detallado si existe
+            const capexAprobado = presupuestoDetalle?.desglose?.capex?.aprobado || presupuesto * 0.8;
+            const capexEjecutado = presupuestoDetalle?.desglose?.capex?.ejecutado || totalEjecutado;
+            const capexComprometido = presupuestoDetalle?.desglose?.capex?.comprometido || 0;
+
+            const porcentaje = capexAprobado > 0 ? Math.round((capexEjecutado / capexAprobado) * 100) : 0;
+
+            // Determinar estado basado en indicadores CPI si disponible
+            let estado: 'normal' | 'alerta' | 'critico' = 'normal';
+            if (presupuestoDetalle?.indicadores) {
+              estado = presupuestoDetalle.indicadores.cpi_estado;
+            } else {
+              estado = porcentaje > 90 ? 'critico' : porcentaje > 70 ? 'alerta' : 'normal';
+            }
 
             return {
               id: p.id,
               codigo: p.codigo_proyecto,
               nombre: p.nombre,
-              presupuestoAprobado: presupuesto,
-              ejecutado: totalEjecutado,
-              comprometido: presupuesto * 0.1, // Estimado
-              disponible: presupuesto - totalEjecutado,
+              presupuestoAprobado: capexAprobado,
+              ejecutado: capexEjecutado,
+              comprometido: capexComprometido,
+              disponible: capexAprobado - capexEjecutado - capexComprometido,
               porcentajeEjecucion: porcentaje,
-              estado: porcentaje > 90 ? 'critico' : porcentaje > 70 ? 'alerta' : 'normal',
+              estado,
               ejecucionesMensuales: ejecuciones,
+              presupuestoDetalle,
             };
           })
         );
@@ -583,21 +624,39 @@ export default function ControlPresupuestario() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Desglose de ejecución */}
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-3">Desglose de Ejecución</h4>
+                              <h4 className="text-sm font-semibold text-gray-900 mb-3">Desglose Presupuestario</h4>
                               <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-gray-500">CAPEX</span>
-                                  <span className="font-medium">{formatCurrency(proyecto.ejecutado * 0.7)}</span>
+                                  <span className="text-gray-500">CAPEX Aprobado</span>
+                                  <span className="font-medium">{formatCurrency(proyecto.presupuestoDetalle?.desglose?.capex?.aprobado || proyecto.presupuestoAprobado)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-gray-500">OPEX</span>
-                                  <span className="font-medium">{formatCurrency(proyecto.ejecutado * 0.3)}</span>
+                                  <span className="text-gray-500">CAPEX Ejecutado</span>
+                                  <span className="font-medium text-blue-600">{formatCurrency(proyecto.presupuestoDetalle?.desglose?.capex?.ejecutado || proyecto.ejecutado)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-500">CAPEX Comprometido</span>
+                                  <span className="font-medium text-amber-600">{formatCurrency(proyecto.presupuestoDetalle?.desglose?.capex?.comprometido || proyecto.comprometido)}</span>
+                                </div>
+                                <div className="border-t pt-2 mt-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">OPEX Anual</span>
+                                    <span className="font-medium">{formatCurrency(proyecto.presupuestoDetalle?.desglose?.opex?.proyectado_anual || 0)}</span>
+                                  </div>
                                 </div>
                                 <div className="border-t pt-2 mt-2 flex justify-between text-sm font-semibold">
-                                  <span className="text-gray-700">Total</span>
-                                  <span>{formatCurrency(proyecto.ejecutado)}</span>
+                                  <span className="text-gray-700">Disponible</span>
+                                  <span className={proyecto.disponible < 0 ? 'text-red-600' : 'text-green-600'}>
+                                    {formatCurrency(proyecto.presupuestoDetalle?.desglose?.capex?.disponible || proyecto.disponible)}
+                                  </span>
                                 </div>
                               </div>
+                              {!proyecto.presupuestoDetalle?.tiene_presupuesto_detallado && (
+                                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Presupuesto estimado (no detallado)
+                                </p>
+                              )}
                             </div>
 
                             {/* Gráfico de ejecución mensual */}
@@ -643,37 +702,69 @@ export default function ControlPresupuestario() {
 
                             {/* Indicadores */}
                             <div className="bg-white rounded-lg p-4 border border-gray-200">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-3">Indicadores</h4>
-                              <div className="space-y-3">
-                                <div>
-                                  <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-500">CPI (Costo)</span>
-                                    <span className={`font-medium ${proyecto.estado === 'critico' ? 'text-red-600' : proyecto.estado === 'alerta' ? 'text-amber-600' : 'text-green-600'}`}>
-                                      {proyecto.estado === 'critico' ? '0.85' : proyecto.estado === 'alerta' ? '0.95' : '1.02'}
-                                    </span>
+                              <h4 className="text-sm font-semibold text-gray-900 mb-3">Indicadores de Desempeño</h4>
+                              {(() => {
+                                const cpi = proyecto.presupuestoDetalle?.indicadores?.cpi || 1;
+                                const spi = proyecto.presupuestoDetalle?.indicadores?.spi || 1;
+                                const cpiEstado = proyecto.presupuestoDetalle?.indicadores?.cpi_estado || 'normal';
+                                const spiEstado = proyecto.presupuestoDetalle?.indicadores?.spi_estado || 'normal';
+
+                                const getColorClass = (estado: string) => {
+                                  if (estado === 'critico') return 'text-red-600';
+                                  if (estado === 'alerta') return 'text-amber-600';
+                                  return 'text-green-600';
+                                };
+
+                                const getBgClass = (estado: string) => {
+                                  if (estado === 'critico') return 'bg-red-500';
+                                  if (estado === 'alerta') return 'bg-amber-500';
+                                  return 'bg-green-500';
+                                };
+
+                                return (
+                                  <div className="space-y-3">
+                                    <div>
+                                      <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-500">CPI (Índice Costo)</span>
+                                        <span className={`font-medium ${getColorClass(cpiEstado)}`}>
+                                          {cpi.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                                        <div
+                                          className={`h-full rounded-full ${getBgClass(cpiEstado)}`}
+                                          style={{ width: `${Math.min(cpi * 100, 100)}%` }}
+                                        />
+                                      </div>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        {cpi >= 1 ? 'Bajo presupuesto ✓' : cpi >= 0.9 ? 'Levemente sobre presupuesto' : 'Sobre presupuesto ⚠'}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-500">SPI (Índice Cronograma)</span>
+                                        <span className={`font-medium ${getColorClass(spiEstado)}`}>
+                                          {spi.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div className="w-full h-1.5 bg-gray-100 rounded-full">
+                                        <div
+                                          className={`h-full rounded-full ${getBgClass(spiEstado)}`}
+                                          style={{ width: `${Math.min(spi * 100, 100)}%` }}
+                                        />
+                                      </div>
+                                      <p className="text-xs text-gray-400 mt-1">
+                                        {spi >= 1 ? 'A tiempo o adelantado ✓' : spi >= 0.9 ? 'Leve retraso' : 'Atrasado ⚠'}
+                                      </p>
+                                    </div>
+                                    {!proyecto.presupuestoDetalle && (
+                                      <p className="text-xs text-gray-400 mt-2 italic">
+                                        Indicadores estimados. Registre ejecución mensual para cálculos precisos.
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="w-full h-1.5 bg-gray-100 rounded-full">
-                                    <div
-                                      className={`h-full rounded-full ${proyecto.estado === 'critico' ? 'bg-red-500' : proyecto.estado === 'alerta' ? 'bg-amber-500' : 'bg-green-500'}`}
-                                      style={{ width: proyecto.estado === 'critico' ? '85%' : proyecto.estado === 'alerta' ? '95%' : '100%' }}
-                                    />
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="flex justify-between text-sm mb-1">
-                                    <span className="text-gray-500">SPI (Cronograma)</span>
-                                    <span className={`font-medium ${proyecto.estado === 'critico' ? 'text-red-600' : 'text-green-600'}`}>
-                                      {proyecto.estado === 'critico' ? '0.78' : '0.98'}
-                                    </span>
-                                  </div>
-                                  <div className="w-full h-1.5 bg-gray-100 rounded-full">
-                                    <div
-                                      className={`h-full rounded-full ${proyecto.estado === 'critico' ? 'bg-red-500' : 'bg-green-500'}`}
-                                      style={{ width: proyecto.estado === 'critico' ? '78%' : '98%' }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                                );
+                              })()}
                             </div>
                           </div>
 

@@ -328,6 +328,10 @@ export const presupuestoService = {
     const response = await api.get(`/presupuesto/alertas/proyecto/${proyectoId}`);
     return response.data;
   },
+  getDetalle: async (proyectoId: number) => {
+    const response = await api.get(`/presupuesto/proyecto/${proyectoId}/detalle`);
+    return response.data;
+  },
 };
 
 // Dashboard
